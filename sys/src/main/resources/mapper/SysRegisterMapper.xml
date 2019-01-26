@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.SysRegisterMapper">
+	<resultMap id="sysResultMap" type="map">
+	</resultMap>
+	<sql id="SysRegisterColumns">
+		s.id AS id,
+		s.sys_code AS sysCode,
+		s.sys_name AS sysName,
+		s.sys_type AS sysType,
+		s.sys_url AS sysUrl,
+		s.sys_icon AS sysIcon,
+		s.sys_desc AS sysDesc,
+		s.sys_sso_token AS sysSsoToken,
+		s.is_sso AS isSso,
+		s.cas_id AS	casId,
+		s.is_publish AS isPublish,
+		s.is_locked AS isLocked,
+		s.sort AS sort,
+		s.org_id AS orgId,
+		s.is_valid AS isValid,
+		s.is_cms_need AS isCmsNeed,
+		s.extend1 AS extend1,
+		s.extend2 AS extend2,
+		s.create_acc_id AS createAccId,
+		s.create_time AS createTime,
+		s.update_acc_id AS updateAccId,
+		s.update_time AS updateTime,
+		s.remark AS remark
+	</sql>
+	
+	<select id="getSysListByExtend1" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysRegister" useCache="false">
+		SELECT
+			<include refid="SysRegisterColumns"></include>
+		FROM omp_sys_register s 
+		WHERE
+			s.is_valid = '1'	
+			and s.extend1 = #{extend1}
+	</select>
+	<!-- 查询有数据源的系统 -->
+	<select id="getotherdataSysList"  resultType="com.bonc.ioc.model.SysRegister" >
+        SELECT
+            <include refid="SysRegisterColumns"></include>
+        FROM omp_sys_register s 
+        WHERE
+            s.is_valid = '1'  
+        and 
+            s.extend1!=null or s.extend1 !='' 
+    </select>
+	
+	   <select id="getSysByRoleId" parameterType="java.lang.String" resultType="java.lang.String" useCache="false">
+        SELECT
+            ors.id AS id,ors.sys_id AS sysId
+        FROM omp_rel_sys_role ors
+        WHERE
+            ors.is_valid = '1'
+            and ors.role_id = {roleId}
+    </select>
+	
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+		<if test="!pagination">
+			<include refid="SysRegisterColumns"></include>,oso.org_name_f as orgName,e.elem_name as sysTypeName
+		</if>
+		<if test="pagination">
+			count(s.id)
+		</if>
+		FROM omp_sys_register s 		
+		LEFT JOIN omp_sys_org oso ON s.org_id = oso.id	
+		LEFT JOIN omp_dic_element e ON s.sys_type=e.id
+		WHERE s.is_valid = 1
+		<if test="sysName != null and sysName != '' ">
+			and ( s.sys_name like '%${sysName}%' or s.sys_code like
+			'%${sysName}%' )
+		</if>
+		<if test="sysCode != null and sysCode != '' ">
+
+		</if>
+		<if test="sysType != null and sysType != '' ">
+			and s.sys_type = #{sysType}
+		</if>
+		<if test="isPublish != null and isPublish != '' ">
+			and s.is_publish = #{isPublish}
+		</if>
+		<if test="orgName != null and orgName != '' ">
+			and oso.org_name_f like '%${orgName}%'
+		</if>
+		ORDER BY
+		s.is_publish
+	</select>
+	<select id="selectSysRegisterList" parameterType="map" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+		<include refid="SysRegisterColumns"></include>,oso.org_name_f as orgName,e.elem_name as sysTypeName
+		FROM omp_sys_register s 		
+		LEFT JOIN omp_sys_org oso ON s.org_id = oso.id	
+		LEFT JOIN omp_dic_element e ON s.sys_type=e.id
+		WHERE s.is_valid = 1
+		<if test="sysName != null and sysName != '' ">
+			and ( s.sys_name like '%${sysName}%' or s.sys_code like
+			'%${sysName}%' )
+		</if>
+		<if test="sysCode != null and sysCode != '' ">
+
+		</if>
+		<if test="sysType != null and sysType != '' ">
+			and s.sys_type = #{sysType}
+		</if>
+		<if test="isPublish != null and isPublish != '' ">
+			and s.is_publish = #{isPublish}
+		</if>
+		<if test="orgName != null and orgName != '' ">
+			and oso.org_name_f like '%${orgName}%'
+		</if>
+		ORDER BY
+		s.is_publish
+	</select>
+
+	<select id="selectByPageIssso" parameterType="map" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+		<if test="!pagination">
+			<include refid="SysRegisterColumns"></include>
+		</if>
+		<if test="pagination">
+			count(s.id)
+		</if>
+		FROM omp_sys_register s
+		WHERE s.is_valid = 1 and s.is_sso = 1
+		<if test="casId !=null and casId != '' ">
+		and s.cas_id=#{casId} 
+		</if>
+		order by s.sort
+	</select>
+	
+	<select id="getSysByorgId" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRegister">
+        SELECT
+        <include refid="SysRegisterColumns"></include>
+        FROM omp_sys_register s
+        WHERE s.is_valid = 1 
+        <if test="orgId !=null and orgId != '' ">
+        and s.org_id=#{orgId} 
+        </if>
+    </select>
+	
+	<select id="queryIsssoList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+			<include refid="SysRegisterColumns"></include>
+		FROM omp_sys_register s
+		WHERE s.is_valid = 1 and s.is_sso = 1
+		<if test="casId !=null and casId != ''">
+			and s.cas_id=#{casId}
+		</if>
+		order by s.sort
+	</select>
+	
+	<!-- 系统列表 -->
+	<!--<select id="findSys" parameterType="page" resultType="pd">-->
+		<!--SELECT-->
+		<!--s.id  id,-->
+		<!--s.sys_code sysCode,-->
+		<!--s.sys_name sysName,-->
+		<!--s.sys_type sysType,-->
+		<!--s.sys_url sysUrl,-->
+		<!--s.sys_icon sysIcon,-->
+		<!--s.sys_desc sysDesc,-->
+		<!--s.remark remark-->
+		<!--FROM-->
+		<!--omp_sys_register s-->
+		<!--WHERE s.is_valid= '1'-->
+		<!--ORDER BY-->
+		<!--s.sort-->
+	<!--</select>-->
+	<!-- 通过id获取数据 -->
+	<select id="findById" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysRegister" useCache="false">
+		SELECT
+		<include refid="SysRegisterColumns"></include>,oso.org_name_f as orgName,e.elem_name as sysTypeName
+		FROM omp_sys_register s 
+		LEFT JOIN omp_sys_org oso ON s.org_id = oso.id
+		LEFT JOIN omp_dic_element e ON s.sys_type=e.id
+		WHERE
+		s.is_valid = '1'
+		<if test="id != null and id != '' ">
+			and s.id = #{id}
+		</if>
+	</select>
+
+
+
+	<!-- 根据sysType获取列表 -->
+	<select id="getSysListBySysType" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+			<include refid="SysRegisterColumns"></include>
+		FROM
+		omp_sys_register s
+		WHERE
+		s.is_valid = 1
+		AND s.sys_type = #{sysType}
+	</select>
+	
+	<!-- 根据userId获取拥有权限的系统列表 -->
+	<select id="getSysListByAccId" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRegister">
+		SELECT DISTINCT
+			<include refid="SysRegisterColumns"></include>
+		FROM
+			omp_rel_sys_role sr
+		LEFT JOIN omp_sys_register s ON sr.sys_id = s.id
+		WHERE
+			sr.is_valid = 1
+		AND s.is_valid = 1
+		AND sr.role_id IN (
+			SELECT
+				ur.role_id
+			FROM
+				omp_rel_acc_role ur
+			WHERE
+				ur.is_valid = 1
+			AND ur.acc_id = #{accId}
+		)
+		ORDER BY
+			s.sort
+	</select>
+
+
+
+	<insert id="save" parameterType="com.bonc.ioc.model.SysRegister" flushCache="false">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+            select replace(uuid(),'-','') from dual 		
+		</selectKey>
+		INSERT INTO omp_sys_register
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="sysCode != null">
+				sys_code,
+			</if>
+			<if test="sysName != null">
+				sys_name,
+			</if>
+			<if test="sysType != null">
+				sys_type,
+			</if>
+			<if test="sysUrl != null">
+				sys_url,
+			</if>
+			<if test="sysIcon != null">
+				sys_icon,
+			</if>
+			<if test="sysDesc != null">
+				sys_desc,
+			</if>
+			<if test="sysSsoToken != null">
+				sys_sso_token,
+			</if>
+			<if test="isSso != null">
+				is_sso,
+			</if>
+			<if test="casId != null">
+				cas_id,
+			</if>
+			<if test="isPublish != null">
+				is_publish,
+			</if>
+			<if test="isLocked != null">
+				is_locked,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="isCmsNeed != null">
+                is_cms_need,
+            </if>
+			<if test="orgId != null">
+				org_id,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="sysCode != null">
+				#{sysCode},
+			</if>
+			<if test="sysName != null">
+				#{sysName},
+			</if>
+			<if test="sysType != null">
+				#{sysType},
+			</if>
+			<if test="sysUrl != null">
+				#{sysUrl},
+			</if>
+			<if test="sysIcon != null">
+				#{sysIcon},
+			</if>
+			<if test="sysDesc != null">
+				#{sysDesc},
+			</if>
+			<if test="sysSsoToken != null">
+				#{sysSsoToken},
+			</if>
+			<if test="isSso != null">
+				#{isSso},
+			</if>
+			<if test="casId != null">
+				#{casId},
+			</if>
+			<if test="isPublish != null">
+				#{isPublish},
+			</if>
+			<if test="isLocked != null">
+				#{isLocked},
+			</if>
+			<if test="sort != null">
+				#{sort},
+			</if>
+			<if test="isCmsNeed != null">
+                #{isCmsNeed},
+            </if>
+			<if test="orgId != null">
+				#{orgId},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="extend1 != null">
+				#{extend1},
+			</if>
+			<if test="extend2 != null">
+				#{extend2},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+			<if test="remark != null">
+				#{remark},
+			</if>
+		</trim>
+	</insert>
+	
+	<update id="updateOtherSysSort" flushCache="false">
+			UPDATE omp_sys_register
+			set sort = sort+1
+			WHERE
+			sort>(#{sort}-1)
+			AND 
+			is_valid = 1
+	</update>
+	
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.model.SysRegister" flushCache="false">
+		UPDATE omp_sys_register
+		<set>
+			<if test="id != null">
+				id = #{id},
+			</if>
+			<if test="sysCode != null">
+				sys_code = #{sysCode},
+			</if>
+			<if test="sysName != null">
+				sys_name = #{sysName},
+			</if>
+			<if test="sysType != null">
+				sys_type = #{sysType},
+			</if>
+			<if test="sysUrl != null">
+				sys_url = #{sysUrl},
+			</if>
+			<if test="sysIcon != null">
+				sys_icon = #{sysIcon},
+			</if>
+			<if test="sysDesc != null">
+				sys_desc = #{sysDesc},
+			</if>
+			<if test="sysSsoToken != null">
+				sys_sso_token = #{sysSsoToken},
+			</if>
+			<if test="isSso != null">
+				is_sso = #{isSso},
+			</if>
+			<if test="casId != null">
+				cas_id = #{casId},
+			</if>
+			<if test="isPublish != null">
+				is_publish = #{isPublish},
+			</if>
+			<if test="isLocked != null">
+				is_locked = #{isLocked},
+			</if>
+			<if test="sort != null">
+				sort = #{sort},
+			</if>
+			<if test="isCmsNeed != null">
+                is_cms_need = #{isCmsNeed},
+            </if>
+			<if test="orgId != null">
+				org_id = #{orgId},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="remark != null">
+				remark = #{remark},
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 删除 -->
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_register
+		SET is_valid = '0'
+		WHERE is_valid = '1'
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<update id="addSort" parameterType="com.bonc.ioc.model.SysRegister" flushCache="false">
+		UPDATE omp_sys_register s
+		set s.sort = s.sort+1
+		WHERE
+		s.sort>#{sort}
+		AND
+		s.is_valid = 0
+	</update>
+	
+	<!--<update id="updateSort" parameterType="pd" flushCache="false">-->
+		<!--UPDATE omp_sys_register-->
+		<!--<if test="operate !=null and operate=='before'">-->
+			<!--SET sort = sort + 1-->
+		<!--</if>-->
+		<!--<if test="operate !=null and operate=='after'">-->
+			<!--SET sort = sort - 1-->
+		<!--</if>-->
+		<!--WHERE-->
+			<!--sort > #{begin}-->
+		<!--AND sort &lt; #{end}-->
+		<!--AND is_valid = 0-->
+	<!--</update>-->
+	<!-- 删除单点服务端 -->
+	<update id="deleteCasid" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_register 
+		SET is_sso = 0,cas_id = ''
+		WHERE is_valid = 1
+		AND cas_id =#{casId}
+	</update>
+	
+	<!-- 解除集成 -->
+	<update id="releseMix" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_register 
+		SET is_sso = 0,cas_id = ''
+		WHERE is_valid = 1
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	<!-- 添加集成 -->
+	<update id="addMix" parameterType="map" flushCache="false">
+		UPDATE omp_sys_register
+		SET is_sso = 1,
+		<if test="casId !=null and casId != ''">
+			cas_id=#{casId}
+		</if>
+		WHERE is_valid = 1
+		<if test="ids !=null and ids != ''">
+		AND id in
+		<foreach item="ids" index="index" collection="ids" open="("
+			separator="," close=")">
+			#{ids}
+		</foreach>
+		</if>
+	</update>
+
+	<select id="findByCode" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysRegister">
+		SELECT
+		<include refid="SysRegisterColumns"></include>
+		FROM omp_sys_register s
+		WHERE
+		s.sys_code = #{sysCode}
+	</select>
+	
+	<!-- 查询再大的sort -->
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_sys_register where is_valid = 1
+	</select>
+	
+</mapper>

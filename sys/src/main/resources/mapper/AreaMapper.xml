@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.AreaMapper" >
+
+<resultMap id="BaseResultMap" type="map" >
+  </resultMap>
+
+<sql id="AreaColumns">
+	oda.id AS id,
+	oda.area_pcode AS areaPcode,
+	oda.area_code AS areaCode,
+	oda.area_name_f AS areaNameF,
+	oda.area_name_s AS areaNameS,
+	oda.area_level AS areaLevel,
+	oda.is_last AS isLast,
+	oda.sort AS sort,
+	oda.is_valid AS isValid,
+	oda.extend1 AS extend1,
+	oda.extend2 AS extend2,
+	oda.create_time AS createTime,
+	oda.create_acc_id AS createAccId,
+	oda.update_time AS updateTime,
+	oda.update_acc_id AS updateAccId,
+	oda.remark AS remark
+</sql>
+
+
+<insert id="save" parameterType="com.bonc.ioc.model.DicArea"  flushCache="false">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+            select replace(uuid(),'-','') from dual 		
+		</selectKey>
+		INSERT INTO omp_dic_area
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="areaPcode != null">
+				area_pcode,
+			</if>
+			<if test="areaCode != null">
+				area_code,
+			</if>
+			<if test="areaNameF != null">
+				area_name_f,
+			</if>
+			<if test="areaNameS != null">
+				area_name_s,
+			</if>
+			<if test="areaLevel != null">
+				area_level,
+			</if>
+			<if test="isLast != null">
+				is_last,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="areaPcode != null">
+				#{areaPcode},
+			</if>
+			<if test="areaCode != null">
+				#{areaCode},
+			</if>
+			<if test="areaNameF != null">
+				#{areaNameF},
+			</if>
+			<if test="areaNameS != null">
+				#{areaNameS},
+			</if>
+			<if test="areaLevel != null">
+				#{areaLevel},
+			</if>
+			<if test="isLast != null">
+				#{isLast},
+			</if>
+			<if test="sort != null">
+				#{sort},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="extend1 != null">
+				#{extend1},
+			</if>
+			<if test="extend2 != null">
+				#{extend2},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="remark != null">
+				#{remark},
+			</if>
+		</trim>
+	</insert>
+	<!-- 行政区划列表显示 -->
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.DicArea">
+
+		SELECT
+		<if test="!pagination">
+	 		<include refid="AreaColumns"></include>
+		</if>
+		<if test="pagination">
+			count(oda.id)
+		</if>
+		FROM omp_dic_area oda
+		WHERE oda.is_valid = 1 
+		 <if test='str != null and str == "S"'> 
+		 	and oda.area_pcode = #{areaCode}
+		 </if> 
+		 <if test='str != null and str == "L"'> 
+		 	and oda.area_code = #{areaCode}
+		 </if> 
+		  <if test='searchCode !=null and searchCode != ""'>
+		 and oda.area_code like '%${searchCode}%'
+		 </if>
+			 <if test="areaNameF != null and areaNameF != '' "> and 
+			oda.area_name_f like '%${areaNameF}%' </if>  
+	</select>
+	
+	<select id="countChildrenByCode" parameterType="java.lang.String" resultType="java.lang.Integer" useCache="false">
+	   SELECT COUNT(oda.id) 
+	   FROM omp_dic_area oda 
+	   WHERE oda.area_pcode = #{areaCode} 
+	   AND oda.is_valid = 1
+	</select>
+	
+	<select id="getAccByAreaId" parameterType="java.lang.String" resultType="java.lang.String" useCache="false">
+        SELECT
+            acc.id AS id
+        FROM omp_sys_account acc
+        WHERE
+            acc.is_valid = '1'
+            and acc.area_id = #{areaId}
+    </select>
+	
+		<!-- 删除 -->
+  <delete id="delete" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_dic_area
+        SET is_valid = 0
+		WHERE is_valid = 1
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  </delete>
+  
+	<!--   验证是否能删除 -->
+  <select id="checkCanDel" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicArea">
+		SELECT 
+			<include refid="AreaColumns"></include>
+		FROM omp_dic_area oda
+		WHERE oda.area_pcode in (
+		SELECT 
+			area_code as areaCode
+		FROM omp_dic_area
+		WHERE id in
+			<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+			)
+	</select>
+
+	<!-- 根据areacode查询 -->
+	<select id="findDicAreaByAreaCode" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.DicArea">
+		SELECT
+		<include refid="AreaColumns"></include>
+		FROM omp_dic_area oda
+		WHERE oda.area_code = #{areaCode} AND oda.is_valid = 1
+	</select>
+
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.model.DicArea">
+		update omp_dic_area
+		<set>
+			<if test="id != null">
+				id = #{id,jdbcType=VARCHAR},
+			</if>
+			<if test="areaPcode != null">
+				area_pcode = #{areaPcode,jdbcType=VARCHAR},
+			</if>
+			<if test="areaCode != null">
+				area_code = #{areaCode,jdbcType=VARCHAR},
+			</if>
+			<if test="areaNameF != null">
+				area_name_f = #{areaNameF,jdbcType=VARCHAR},
+			</if>
+			<if test="areaNameS != null">
+				area_name_s = #{areaNameS,jdbcType=VARCHAR},
+			</if>
+			<if test="areaLevel != null">
+				area_level = #{areaLevel,jdbcType=VARCHAR},
+			</if>
+			<if test="isLast != null">
+				is_last = #{isLast,jdbcType=VARCHAR},
+			</if>
+			<if test="sort != null">
+				sort = #{sort,jdbcType=VARCHAR},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid,jdbcType=VARCHAR},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1,jdbcType=VARCHAR},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="remark != null">
+				remark = #{remark,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=CHAR}
+	</update>
+  
+  
+	<!-- 查看 -->
+	<select id="findById" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.DicArea">
+
+		SELECT
+
+			oda.id AS id,
+			oda.area_pcode AS areaPcode,
+			oda.area_code AS areaCode,
+			oda.area_name_f AS areaNameF,
+			oda.area_name_s AS areaNameS,
+			oda.area_level AS areaLevel,
+			oda.is_last AS isLast,
+			oda.sort AS sort,
+			oda.is_valid AS isValid,
+			oda.extend1 AS extend1,
+			oda.extend2 AS extend2,
+			oda.create_time AS createTime,
+			oda.create_acc_id AS createAccId,
+			oda.update_time AS updateTime,
+			oda.update_acc_id AS updateAccId,
+			oda.remark AS remark,
+			SO.area_name_f AS pareaName
+
+		<!-- <if test="pagination"> count(id) </if> -->
+		FROM omp_dic_area oda LEFT JOIN (SELECT area_code,area_name_f FROM omp_dic_area) AS SO ON oda.area_pcode = SO.area_code
+		WHERE is_valid = 1
+		AND id = #{id}
+	</select>
+	
+	<!-- 获取区划行政树 -->
+	<select id="getDicAreaList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicArea">
+	select
+		id AS id,
+			area_pcode AS areaPcode,
+			area_code AS areaCode,
+			area_name_f AS areaNameF,
+			area_name_s AS areaNameS,
+			area_level AS areaLevel,
+			is_last AS isLast,
+			sort AS sort,
+			is_valid AS isValid,
+			extend1 AS extend1,
+			extend2 AS extend2,
+			create_time AS createTime,
+			create_acc_id AS createAccId,
+			update_time AS updateTime,
+			update_acc_id AS updateAccId,
+			remark AS remark
+	from
+	omp_dic_area
+	WHERE
+	is_valid=1
+	<if test="pcode != null and pcode != '' ">
+		and area_pcode = #{pcode}
+	</if>
+  </select>
+  
+  <select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_dic_area where is_valid = 1
+	</select>
+  
+  
+  	<update id="updateOtherAreaSort" flushCache="false">
+		UPDATE omp_dic_area
+		set sort = sort+1
+		WHERE
+		sort>(#{sort}-1)
+		AND 
+		is_valid = 1 and area_pcode = #{areaPCode}
+	</update>
+  
+  <select id="findDicAreaByAreaCodeAndSort" resultType="com.bonc.ioc.model.DicArea">
+		SELECT 
+			<include refid="AreaColumns"></include>
+		FROM omp_dic_area oda
+		WHERE oda.area_pcode = #{areaPCode} and oda.sort = #{sort} and oda.is_valid = 1
+	</select>
+  
+  
+</mapper>

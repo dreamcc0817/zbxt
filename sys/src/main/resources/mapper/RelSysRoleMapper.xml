@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.RelSysRoleMapper" >
+	<resultMap id="accountResultMap" type="map" >
+	</resultMap>
+    <sql id="relSysRoleColumns">
+    	orsr.id AS id,
+		orsr.sys_id AS sysId,
+		orsr.role_id AS roleId,
+		orsr.is_valid AS isValid,
+		orsr.create_acc_id AS createAccId,
+		orsr.create_time AS createTime,
+		orsr.update_acc_id AS updateAccId,
+		orsr.update_time AS updateTime
+	</sql>
+	<select id="getRelSysRoleList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelSysRole">
+	   select distinct
+	    <include refid="relSysRoleColumns" />
+	    from omp_rel_sys_role orsr
+	    where orsr.is_valid='1'
+	    <if test="sysId != null and sysId != '' ">
+			and orsr.sys_id = #{sysId}
+		</if>
+		<if test="roleId != null and roleId != '' ">
+			and orsr.role_id = #{roleId}
+		</if>
+   </select>
+   
+   
+   <insert id="saveRelSysRole" parameterType="com.bonc.ioc.model.RelSysRole" flushCache="false">
+		INSERT INTO omp_rel_sys_role
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="sysId != null">
+				sys_id,
+			</if>
+			<if test="roleId != null">
+				role_id,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="sysId != null">
+				#{sysId},
+			</if>
+			<if test="roleId != null">
+				#{roleId},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+		</trim>
+	</insert>
+	
+	
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_rel_sys_role
+        SET is_valid = '0'
+		WHERE is_valid = '1'
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  	</delete>
+  	
+  	<!--<select id="findMaxOrderNum" resultType="java.lang.Integer">-->
+		<!--SELECT-->
+		<!--IFNULL(MAX(sort+1),1) as sort FROM omp_sys_role where is_valid = 1-->
+	<!--</select>-->
+	<!--<update id="updateOtherEleSort" flushCache="false">-->
+		<!--UPDATE-->
+		<!--omp_sys_role-->
+		<!--set sort = sort+1-->
+		<!--WHERE-->
+		<!--sort>(#{sort}-1)-->
+		<!--AND-->
+		<!--is_valid = 1-->
+	<!--</update>-->
+</mapper>

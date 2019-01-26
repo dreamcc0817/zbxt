@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.RelSysMenuMapper" >
+	<resultMap id="accountResultMap" type="map" >
+	</resultMap>
+    <sql id="relSysMenuColumns">
+    	orsm.id AS id,
+		orsm.sys_id AS sysId,
+		orsm.menu_id AS menuId,
+		orsm.is_valid AS isValid,
+		orsm.create_acc_id AS createAccId,
+		orsm.create_time AS createTime,
+		orsm.update_acc_id AS updateAccId,
+		orsm.update_time AS updateTime
+	</sql>
+	<select id="getRelSysMenuList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelSysMenu">
+	   select 
+	    <include refid="relSysMenuColumns" />,
+			osm.menu_code AS menuCode,
+			osm.menu_pcode AS menuPcode,
+			osm.menu_name AS menuName
+	    from omp_rel_sys_menu orsm LEFT JOIN omp_sys_menu osm ON orsm.menu_id = osm.id
+	    where orsm.is_valid=1 AND osm.is_valid=1
+	    <if test="sysId != null and sysId != '' ">
+			and orsm.sys_id = #{sysId}
+		</if>
+   </select>
+   <select id="getRelSysMenuListByMenu" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelSysMenu">
+       select 
+        <include refid="relSysMenuColumns" />
+        from omp_rel_sys_menu orsm 
+        where orsm.is_valid=1 
+        <if test="menuId != null and menuId != '' ">
+            and orsm.menu_id = #{menuId}
+        </if>
+   </select>
+   <select id="getRelSysMenuByMenuId" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelSysMenu">
+	   select 
+	    <include refid="relSysMenuColumns" />
+	    from omp_rel_sys_menu orsm
+	    where orsm.is_valid=1 
+	    <if test="menuId != null and menuId != '' ">
+			and orsm.menu_id = #{menuId}
+		</if>
+   </select>
+   
+   <delete id="delete" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_rel_sys_menu
+        SET is_valid = '0'
+		WHERE is_valid = '1'
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  	</delete>
+   
+   
+   <insert id="saveRelSysMenu" parameterType="com.bonc.ioc.model.RelSysMenu" flushCache="false">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+			select replace(uuid(),'-','') from dual
+		</selectKey>
+		INSERT INTO omp_rel_sys_menu
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="sysId != null">
+				sys_id,
+			</if>
+			<if test="menuId != null">
+				menu_id,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="sysId != null">
+				#{sysId},
+			</if>
+			<if test="menuId != null">
+				#{menuId},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+		</trim>
+	</insert>
+	<!--<select id="findMaxOrderNum" resultType="java.lang.Integer">-->
+		<!--SELECT-->
+		<!--IFNULL(MAX(sort+1),1) as sort FROM omp_sys_menu where is_valid = 1-->
+	<!--</select>-->
+	<!--<update id="updateOtherEleSort" flushCache="false">-->
+		<!--UPDATE-->
+		<!--omp_sys_menu-->
+		<!--set sort = sort+1-->
+		<!--WHERE-->
+		<!--sort>(#{sort}-1)-->
+		<!--AND-->
+		<!--is_valid = 1-->
+	<!--</update>-->
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.CategoryMapper">
+
+
+    <select id="getCategoryDao" resultType="java.util.Map">
+      select
+              category_id AS categoryId,
+              category_pid AS categoryPid,
+              category_name AS categoryName,
+              category_fullcode AS categoryFullcode,
+              category_code AS categoryCode,
+              category_level AS categoryLevel,
+              category_desc AS categoryDesc,
+              DATE_FORMAT(category_creattime,'%Y-%m-%d') AS categoryCreattime,
+              DATE_FORMAT(category_updatetime,'%Y-%m-%d') AS categoryUpdatetime
+      from category
+      where
+              category_id = #{categoryId}
+    </select>
+
+    <!--查询子类目信息-->
+    <select id="getChildrenParallelCategoryDao" resultType="java.util.Map">
+            select
+              category_id AS categoryId,
+              category_pid AS categoryPid,
+              category_name AS categoryName,
+              category_fullcode AS categoryFullcode,
+              category_code AS categoryCode,
+              category_level AS categoryLevel,
+              category_desc AS categoryDesc,
+              DATE_FORMAT(category_creattime,'%Y-%m-%d') AS categoryCreattime,
+              DATE_FORMAT(category_updatetime,'%Y-%m-%d') AS categoryUpdatetime
+            from category
+    </select>
+
+    <!--根据类目id和addCode查询新增fullCode是否重复-->
+    <!--返回数量大于0说明重复-->
+    <!--用于类目新增时判断所用-->
+    <select id="whetherFullCodeRepeatDao" resultType="java.lang.Integer">
+        select count(*) from category where category_fullcode like CONCAT('%',#{codeAdd},'%')
+    </select>
+
+    <!--更新类目，fullcode不做更新-->
+    <update id="updateCategoryDao">
+        update
+        category
+        set
+        category_name = #{categoryName},
+        category_code = #{categoryCode},
+        category_desc = #{categoryDesc}
+        where category_id = #{categoryId}
+    </update>
+
+    <!--新增类目，判断是否传入父类目pid-->
+    <insert id="addCategoryDao">
+        insert into
+        category
+        values
+        (null,
+        <if test="categoryPid != null and categoryPid !=''">
+            #{categoryPid},
+            #{categoryName},
+            concat((SELECT c.category_fullcode FROM (select tmp.* from category tmp) c
+            WHERE c.category_id = #{categoryPid}),
+            '_',
+            #{codeAdd}),
+            #{categoryCode},
+            ((SELECT c.category_level FROM
+            (select tmp.* from category tmp) c
+            WHERE c.category_id = #{categoryPid})+1),
+        </if>
+        <if test="categoryPid == null or categoryPid ==''">
+            -1,
+            #{categoryName},
+            #{codeAdd},
+            #{categoryCode},
+            1,
+        </if>
+        #{categoryDesc},
+        null,
+        now(),
+        null,
+        now()
+        )
+    </insert>
+
+    <!--删除子类目及其本身数据信息-->
+    <delete id="deleteAllByCategoryIdDao">
+        delete from category  where
+            category_id = #{categoryId}
+            or category_fullcode like
+                concat((select c.category_fullcode from (select tmp.* from category tmp) c where c.category_id = #{categoryId}),'_%')
+    </delete>
+
+    <update id="updatePidWhenCategoryMoveDao">
+        update
+          category
+        set
+          category_pid = #{moveAfterFatherCategoryId}
+        where
+          category_id = #{categoryId}
+    </update>
+
+    <update id="updateFullcodeWhenCategoryMoveDao">
+        update
+          category
+        set
+        <if test="moveBeforeFatherCategoryId != -1">
+            category_fullcode = replace(category_fullcode,#{moveBeforeFatherCategoryFullcode},#{moveAfterFatherCategoryFullcode})
+        </if>
+        <if test="moveBeforeFatherCategoryId == -1">
+            category_fullcode = concat(#{moveAfterFatherCategoryFullcode},category_fullcode)
+        </if>
+        where
+          category_fullcode = #{moveCategoryFullcode}
+        or
+          category_fullcode like concat(#{moveCategoryFullcode},'_%')
+    </update>
+
+    <update id="updateLevelWhenCategoryMoveDao">
+        update
+          category
+        set
+          category_level = category_level + #{changeLevel}
+        where
+          category_fullcode = #{moveCategoryFullcode}
+        or
+          category_fullcode like concat(#{moveCategoryFullcode},'_%')
+    </update>
+</mapper>
+
+

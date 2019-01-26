@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.DicElementMapper" >
+  <sql id="dicElemColumns">
+  	ode.id AS id,
+	ode.type_code AS typeCode,
+	ode.elem_code AS elemCode,
+	ode.elem_name AS elemName,
+	ode.elem_desc AS elemDesc,
+	ode.sort AS sort,
+	ode.is_valid AS isValid,
+	ode.extend1 AS extend1,
+	ode.extend2 AS extend2,
+	ode.create_time AS createTime,
+	ode.create_acc_id AS createAccId,
+	ode.update_time AS updateTime,
+	ode.update_acc_id AS updateAccId,
+	ode.remark AS remark
+  </sql>
+  
+   <select id="findForList" resultType="com.bonc.ioc.model.DicElement">
+   select 
+   	 <include refid="dicElemColumns" />
+    from omp_dic_element ode
+     where ode.type_code = #{typeCode}
+     and ode.is_valid=1
+  </select>
+
+  <!--&lt;!&ndash; 字典管理列表树 &ndash;&gt;-->
+	<!--<select id="findList" parameterType="java.lang.String" resultType="pd">-->
+	<!--SELECT-->
+	<!--id AS id,-->
+	<!--type_code AS typeCode,-->
+	<!--elem_code AS elemCode,-->
+	<!--elem_name AS elemName,-->
+	<!--is_valid AS isValid-->
+	<!--FROM-->
+	<!--omp_dic_element-->
+	<!--WHERE-->
+	<!--is_valid = 0-->
+	<!--<if test="elemCode != null and elemCode != '' ">-->
+			<!--and elem_code = #{elemCode}-->
+		<!--</if>-->
+		<!--</select>-->
+		
+		
+		<!--&lt;!&ndash; 字典元素数据列表 &ndash;&gt;-->
+	<!--<select id="findPage" parameterType="page" resultType="pd">-->
+		<!--SELECT-->
+		<!--id AS id,-->
+		<!--type_code AS typeCode,-->
+		<!--elem_code AS elemCode,-->
+		<!--elem_name AS elemName,-->
+		<!--is_valid AS isValid-->
+		<!--FROM-->
+		<!--omp_dic_element-->
+		<!--WHERE-->
+		<!--is_valid = 0-->
+		<!--&lt;!&ndash; <if test="elemCode != null and elemCode != '' ">-->
+				<!--and elem_code = #{elemCode}-->
+			<!--</if> &ndash;&gt;-->
+			<!--<if test="pd.elemName != null and pd.elemName != '' ">-->
+			<!--and elem_name like '%${pd.elemName}%'-->
+		<!--</if>-->
+	<!--</select>-->
+		
+
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_dic_element where is_valid = 1
+	</select>
+	
+  <select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.DicElement">
+
+		SELECT 
+		 	<if test="!pagination">
+		 		<include refid="dicElemColumns"></include>,odt.type_name AS typeName
+			</if>
+			<if test="pagination">
+				count(ode.id)
+			</if>
+		FROM omp_dic_element ode LEFT JOIN omp_dic_type odt ON ode.type_code = odt.type_code
+		WHERE ode.is_valid = 1
+		 <if test="typeCode != null and typeCode != '' ">
+			and  ode.type_code = #{typeCode}
+		</if>
+		<if test="elemName != null and elemName != '' ">
+			and  ode.elem_name like '%${elemName}%'
+		</if> 
+	</select>
+	
+	<select id="getDicEleListByTypeCode" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicElement">
+
+		SELECT 
+		 		<include refid="dicElemColumns"></include>
+		FROM omp_dic_element ode 
+		WHERE ode.is_valid = 1
+			and  ode.type_code = #{typeCode}
+	</select>
+	
+	
+	 <select id="findById" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicElement">
+
+		SELECT 
+		 
+		 		id AS id,
+				type_code AS typeCode,
+				elem_code AS elemCode,
+				elem_name AS elemName,
+				elem_desc AS elemDesc,
+				create_time AS createTime,
+				is_valid AS isValid
+		
+		 <!-- <if test="pagination">
+				count(id)
+			</if>  -->
+		FROM omp_dic_element 
+		WHERE is_valid = 1
+		AND id = #{id}
+		</select>
+		
+		<select id="getDicElementByElemId" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicElement">
+
+		SELECT 
+		 
+		 	<include refid="dicElemColumns"></include>,odt.type_name AS typeName
+		FROM omp_dic_element ode LEFT JOIN omp_dic_type odt ON ode.type_code = odt.type_code
+		WHERE ode.is_valid = 1 and ode.id = #{elemId}
+		
+		</select>
+		
+		
+		<select id="findDicElementByElemCode" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicElement">
+
+		SELECT 
+		 
+		 	<include refid="dicElemColumns"></include>
+		FROM omp_dic_element ode 
+		WHERE ode.is_valid = 1 and ode.elem_code = #{elemCode}
+		
+		</select>
+		
+		<update id="updateOtherEleSort" flushCache="false">
+			UPDATE omp_dic_element
+			set sort = sort+1
+			WHERE
+			sort>(#{sort}-1)
+			AND 
+			is_valid = 1
+		</update>
+		
+		<insert id="saveDicElement" parameterType="com.bonc.ioc.model.DicElement" flushCache="false">
+			<selectKey keyProperty="id" resultType="String" order="BEFORE">
+				select replace(uuid(),'-','') from dual
+			</selectKey>
+		INSERT INTO omp_dic_element
+			<trim prefix="(" suffix=")" suffixOverrides=",">
+				<if test="id != null">
+					id,
+				</if>
+				<if test="typeCode != null">
+					type_code,
+				</if>
+				<if test="elemCode != null">
+					elem_code,
+				</if>
+				<if test="elemName != null">
+					elem_name,
+				</if>
+				<if test="elemDesc != null">
+					elem_desc,
+				</if>
+				<if test="sort != null">
+					sort,
+				</if>
+				<if test="isValid != null">
+					is_valid,
+				</if>
+				<if test="extend1 != null">
+					extend1,
+				</if>
+				<if test="extend2 != null">
+					extend2,
+				</if>
+				<if test="createTime != null">
+					create_time,
+				</if>
+				<if test="createAccId != null">
+					create_acc_id,
+				</if>
+				<if test="updateTime != null">
+					update_time,
+				</if>
+				<if test="updateAccId != null">
+					update_acc_id,
+				</if>
+				<if test="remark != null">
+					remark,
+				</if>
+			</trim>
+			<trim prefix="values (" suffix=")" suffixOverrides=",">
+				<if test="id != null">
+					#{id},
+				</if>
+				<if test="typeCode != null">
+					#{typeCode},
+				</if>
+				<if test="elemCode != null">
+					#{elemCode},
+				</if>
+				<if test="elemName != null">
+					#{elemName},
+				</if>
+				<if test="elemDesc != null">
+					#{elemDesc},
+				</if>
+				<if test="sort != null">
+					#{sort},
+				</if>
+				<if test="isValid != null">
+					#{isValid},
+				</if>
+				<if test="extend1 != null">
+					#{extend1},
+				</if>
+				<if test="extend2 != null">
+					#{extend2},
+				</if>
+				<if test="createTime != null">
+					#{createTime},
+				</if>
+				<if test="createAccId != null">
+					#{createAccId},
+				</if>
+				<if test="updateTime != null">
+					#{updateTime},
+				</if>
+				<if test="updateAccId != null">
+					#{updateAccId},
+				</if>
+				<if test="remark != null">
+					#{remark},
+				</if>
+			</trim>
+		</insert>
+		
+		
+		<!-- 修改 -->
+		<update id="updateDicElement" parameterType="com.bonc.ioc.model.DicElement" flushCache="false">
+			UPDATE omp_dic_element
+			<set>
+				<if test="id != null">
+					id = #{id},
+				</if>
+				<if test="typeCode != null">
+					type_code = #{typeCode},
+				</if>
+				<if test="elemCode != null">
+					elem_code = #{elemCode},
+				</if>
+				<if test="elemName != null">
+					elem_name = #{elemName},
+				</if>
+				<if test="elemDesc != null">
+					elem_desc = #{elemDesc},
+				</if>
+				<if test="sort != null">
+					sort = #{sort},
+				</if>
+				<if test="isValid != null">
+					is_valid = #{isValid},
+				</if>
+				<if test="extend1 != null">
+					extend1 = #{extend1},
+				</if>
+				<if test="extend2 != null">
+					extend2 = #{extend2},
+				</if>
+				<if test="createTime != null">
+					create_time = #{createTime},
+				</if>
+				<if test="createAccId != null">
+					create_acc_id = #{createAccId},
+				</if>
+				<if test="updateTime != null">
+					update_time = #{updateTime},
+				</if>
+				<if test="updateAccId != null">
+					update_acc_id = #{updateAccId},
+				</if>
+				<if test="remark != null">
+					remark = #{remark},
+				</if>
+			</set>
+			WHERE id = #{id}
+		</update>
+		
+		<!-- 删除 -->
+	  <delete id="deleteDicElement" parameterType="java.lang.String" flushCache="false">
+	        UPDATE omp_dic_element
+	        SET is_valid = 0
+			WHERE is_valid = 1
+			AND id in
+			<foreach item="item" index="index" collection="array" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+  	</delete>
+</mapper>

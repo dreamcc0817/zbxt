@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.CategoryAttributesMapper">
+
+    <!---->
+    <select id="getCategoryPropertyInfoDao" resultType="java.util.Map">
+        select
+            c.attr_id as attrId,
+            c.category_fullcode as categoryFullcode,
+            c.attr_name_cn as attrNameCn,
+            c.attr_name_en as attrNameEn,
+            c.attr_issingle as attrIssingle,
+            c.attr_isrequired  as attrIsrequired
+        from category_attributes c
+        where attr_id = #{attrId} order by attr_id
+    </select>
+
+    <update id="updateCategoryAttributesDao">
+        update
+          category_attributes
+        set
+          attr_name_cn = #{attrNameCn},
+          attr_name_en = #{attrNameEn},
+          attr_issingle = #{attrIssingle},
+          attr_isrequired = #{attrIsrequired}
+         where
+           attr_id = #{attrId}
+    </update>
+
+    <insert id="addCategoryAttributesDao">
+        insert into category_attributes values
+        (
+        null,
+        #{categoryFullcode},
+        #{attrNameCn},
+        #{attrNameEn},
+        #{attrIssingle},
+        #{attrIsrequired}
+        )
+    </insert>
+
+    <delete id="deleteCategoryAttributesByCategoryIdDao">
+        delete  from category_attributes where category_fullcode in
+            (
+              select category_fullcode from category
+                where category_id = #{categoryId} or category_fullcode like
+                  concat((select category_fullcode from category where category_id = #{categoryId}),'_%')
+            )
+    </delete>
+
+    <select id="selectByPagegetCategoryPropertyInfosDao" resultType="java.util.Map">
+        select
+            c.attr_id as attrId,
+            c.category_fullcode as categoryFullcode,
+            c.attr_name_cn as attrNameCn,
+            c.attr_name_en as attrNameEn,
+            c.attr_issingle as attrIssingle,
+            c.attr_isrequired  as attrIsrequired
+        from category_attributes c
+        where instr(concat(',',#{allFatherFullCode},','),concat(',',category_fullcode,',')) order by attr_id desc
+    </select>
+
+    <delete id="deleteCategoryAttributesByAttrIdDao">
+        delete  from category_attributes where attr_id = #{attrId}
+    </delete>
+
+    <select id="getAttrIdByFullcodeDao" resultType="Integer">
+        select attr_id as attrId from category_attributes where
+          category_fullcode = #{categoryFullcode} and attr_name_cn = #{attrNameCn}
+    </select>
+
+    <update id="updateAttributesWhenCategoryMoveDao">
+        update
+          category_attributes
+        set
+        <if test="moveBeforeFatherCategoryId != -1">
+            category_fullcode = replace(category_fullcode,#{moveBeforeFatherCategoryFullcode},#{moveAfterFatherCategoryFullcode})
+        </if>
+        <if test="moveBeforeFatherCategoryId == -1">
+            category_fullcode = concat(#{moveAfterFatherCategoryFullcode},category_fullcode)
+        </if>
+        where
+          attr_id
+        in
+          (
+            select
+              ccc.attr_id
+            from
+              (select tmp.* from category_attributes tmp) ccc
+            where
+              ccc.category_fullcode = #{moveCategoryFullcode}
+            or
+              ccc.category_fullcode like concat(#{moveCategoryFullcode},'_%')
+          )
+    </update>
+
+</mapper>

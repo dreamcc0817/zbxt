@@ -1,0 +1,353 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.bonc.ioc.dao.DicTypeMapper">
+<sql id="Base_Column_List" >
+	type.id AS id,
+	type.type_pcode AS typePcode,
+	type.type_code AS typeCode,
+	type.type_name AS typeName,
+	type.type_desc AS typeDesc,
+	type.type_level AS typeLevel,
+	type.is_last AS isLast,
+	type.sort AS sort,
+	type.is_valid AS isValid,
+	type.extend1 AS extend1,
+	type.extend2 AS extend2,
+	type.create_time AS createTime,
+	type.create_acc_id AS createAccId,
+	type.update_time AS updateTime,
+	type.update_acc_id AS updateAccId,
+	type.remark AS remark
+</sql>
+ <!--根据type_code查询elem_code和elem_name-->
+    <select id="getDicListByType" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT
+		ode.id AS id,
+		ode.elem_code AS elemCode,
+		ode.elem_name AS elemName
+		FROM
+		omp_dic_element ode
+		WHERE
+		1 = 1
+		<if test="typeCode != null and typeCode != '' ">
+			and ode.type_code = #{typeCode}
+		</if>
+	</select>
+
+	<select id="getDicTypeList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicType">
+	select
+		id AS id,
+		type_pcode AS typePcode,
+		type_code AS typeCode,
+		type_name AS typeName,
+		type_desc AS typeDesc,
+		type_level AS typeLevel,
+		is_last AS isLast,
+		sort AS sort,
+		is_valid AS isValid,
+		extend1 AS extend1,
+		extend2 AS extend2,
+		create_time AS createTime,
+		create_acc_id AS createAccId,
+		update_time AS updateTime,
+		update_acc_id AS updateAccId,
+		remark AS remark
+	from
+	omp_dic_type
+	WHERE
+	is_valid=1
+	<if test="pcode != null and pcode != '' ">
+		and type_code = #{pcode}
+	</if>
+	
+	</select>
+	
+	
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_dic_type where is_valid = 1
+	</select>
+
+<!-- 	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.omp.model.dic.DicType">
+		SELECT 
+		 	<if test="!pagination">
+		 		<include refid="Base_Column_List"></include>,PT.type_name pTypeName,(SELECT count(od.id) FROM omp_dic_element od WHERE od.type_code = type.type_code and od.is_valid = 1) AS elemCount
+			</if>
+			<if test="pagination">
+				count(type.id)
+			</if>
+		FROM omp_dic_type type LEFT JOIN (SELECT type_code,type_name FROM omp_dic_type) AS PT ON type.type_pcode = PT.type_code
+		WHERE type.is_valid = 1 
+		<if test="typeName != null and typeName != '' ">
+			and type.type_name like '%${typeName}%'
+		</if>
+		<if test="typeCode != null and typeCode != '' ">
+			and type.type_code = #{typeCode}
+		</if>
+	</select> -->
+	
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.DicType">
+		SELECT 
+		 	<if test="!pagination">
+		 		<include refid="Base_Column_List"></include>,PT.type_name pTypeName
+			</if>
+			<if test="pagination">
+				count(type.id)
+			</if>
+		FROM omp_dic_type type 
+		LEFT JOIN (SELECT type_code,type_name FROM omp_dic_type) AS PT 
+		ON type.type_pcode = PT.type_code
+		WHERE type.is_valid = 1 
+		<if test="typeName != null and typeName != '' ">
+			and type.type_name like '%${typeName}%'
+		</if>
+		<if test="typeCode != null and typeCode != '' ">
+			and type.type_code = #{typeCode}
+		</if>
+	</select>
+	
+	<select id="countChildrenByCode" parameterType="java.lang.String" resultType="java.lang.Integer" useCache="false">  
+	   SELECT count(od.id) 
+	   FROM omp_dic_element od 
+	   WHERE od.type_code = #{typeCode} 
+	   AND od.is_valid = 1
+	</select>
+	
+	
+	<select id="findDicTypeByTypeId" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicType">
+		SELECT 
+			<include refid="Base_Column_List"></include>,PT.type_name pTypeName
+		FROM omp_dic_type type LEFT JOIN (SELECT type_code,type_name FROM omp_dic_type) AS PT ON type.type_pcode = PT.type_code
+		WHERE type.id = #{typeId}
+	</select>
+
+	<select id="findDicTypeByTypeCode" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicType">
+		SELECT 
+			<include refid="Base_Column_List"></include>
+		FROM omp_dic_type type
+		WHERE type.type_code = #{typeCode}
+	</select>
+	
+	
+	<select id="findDicTypeByTypeCodeAndSort" resultType="com.bonc.ioc.model.DicType">
+		SELECT 
+			<include refid="Base_Column_List"></include>
+		FROM omp_dic_type type
+		WHERE type.type_pcode = #{typePCode} and type.sort = #{sort} and type.is_valid = 1
+	</select>
+	
+	<select id="checkCanDel" parameterType="java.lang.String" resultType="com.bonc.ioc.model.DicType">
+		SELECT 
+			ode.id AS id,
+		    ode.type_code AS typeCode,
+		    ode.elem_code AS elemCode,
+		    ode.elem_name AS elemName,
+		    ode.elem_desc AS elemDesc,
+		    ode.sort AS sort,
+		    ode.is_valid AS isValid,
+		    ode.extend1 AS extend1,
+		    ode.extend2 AS extend2,
+		    ode.create_time AS createTime,
+		    ode.create_acc_id AS createAccId,
+		    ode.update_time AS updateTime,
+		    ode.update_acc_id AS updateAccId,
+		    ode.remark AS remark
+		FROM omp_dic_element ode
+		WHERE ode.type_code in (
+		SELECT 
+			type_code as typeCode
+		FROM omp_dic_type
+		WHERE id in
+			<foreach item="item" index="index" collection="array" open="("
+				separator="," close=")">
+				#{item}
+			</foreach>
+			)
+			AND ode.is_valid = 1
+	</select>
+	
+	<!-- 删除 -->
+	<delete id="deleteDicType" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_dic_type
+        SET is_valid = 0
+		WHERE is_valid = 1
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  	</delete>
+	
+	<update id="updateOtherTypeSort" flushCache="false">
+		UPDATE omp_dic_type
+		set sort = sort+1
+		WHERE
+		sort>(#{sort}-1)
+		AND 
+		is_valid = 1 and type_pcode = #{typePCode}
+	</update>
+	
+	<insert id="saveDicType" parameterType="com.bonc.ioc.model.DicType" flushCache="false">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+			select replace(uuid(),'-','') from dual
+		</selectKey>
+		INSERT INTO omp_dic_type
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="typePcode != null">
+				type_pcode,
+			</if>
+			<if test="typeCode != null">
+				type_code,
+			</if>
+			<if test="typeName != null">
+				type_name,
+			</if>
+			<if test="typeDesc != null">
+				type_desc,
+			</if>
+			<if test="typeLevel != null">
+				type_level,
+			</if>
+			<if test="isLast != null">
+				is_last,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="typePcode != null">
+				#{typePcode},
+			</if>
+			<if test="typeCode != null">
+				#{typeCode},
+			</if>
+			<if test="typeName != null">
+				#{typeName},
+			</if>
+			<if test="typeDesc != null">
+				#{typeDesc},
+			</if>
+			<if test="typeLevel != null">
+				#{typeLevel},
+			</if>
+			<if test="isLast != null">
+				#{isLast},
+			</if>
+			<if test="sort != null">
+				#{sort},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="extend1 != null">
+				#{extend1},
+			</if>
+			<if test="extend2 != null">
+				#{extend2},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="remark != null">
+				#{remark},
+			</if>
+		</trim>
+	</insert>
+	
+	
+	<!-- 修改 -->
+	<update id="updateDicType" parameterType="com.bonc.ioc.model.DicType" flushCache="false">
+		UPDATE omp_dic_type
+		<set>
+			<if test="id != null">
+				id = #{id},
+			</if>
+			<if test="typePcode != null">
+				type_pcode = #{typePcode},
+			</if>
+			<if test="typeCode != null">
+				type_code = #{typeCode},
+			</if>
+			<if test="typeName != null">
+				type_name = #{typeName},
+			</if>
+			<if test="typeDesc != null">
+				type_desc = #{typeDesc},
+			</if>
+			<if test="typeLevel != null">
+				type_level = #{typeLevel},
+			</if>
+			<if test="isLast != null">
+				is_last = #{isLast},
+			</if>
+			<if test="sort != null">
+				sort = #{sort},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="remark != null">
+				remark = #{remark},
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+</mapper>

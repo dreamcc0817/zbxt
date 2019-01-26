@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.SearchDao">
+
+    <sql id="rulerColumns">
+        d.doc_id AS docId,
+        ifnull(d.doc_name, "") AS docName,
+        ifnull(d.doc_desc, "") AS docDesc,
+        ifnull(d.doc_creator, "") AS docCreator,
+        ifnull(d.doc_createtime, "") AS docCreatetime
+    </sql>
+
+    <resultMap id="categoryResult" type="com.bonc.ioc.model.Category">
+        <id property="categoryId" column="category_id"/>
+        <result property="categoryPid" column="category_pid"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="categoryFullcode" column="category_fullcode"/>
+        <result property="categoryCode" column="category_code"/>
+        <result property="categoryLevel" column="category_level"/>
+        <result property="categoryDesc" column="category_desc"/>
+        <result property="categoryCreator" column="category_creator"/>
+        <result property="categoryCreattime" column="category_creattime"/>
+        <result property="categoryUpdator" column="category_updator"/>
+        <result property="categoryUpdatetime" column="category_updatetime"/>
+    </resultMap>
+
+    <select id="getCategoryProps" parameterType="java.lang.String" resultType="java.util.Map">
+        select
+            attr_id      as attrId,
+            attr_name_cn as attrNameCn
+        from category_attributes
+        where category_fullcode = (select category_fullcode
+                                   from category
+                                   where category_id = #{categoryId})
+    </select>
+
+    <select id="selectByPageFindByKeyWords" resultType="java.util.Map">
+        select
+        index_id as indexId,
+        index_code as indexCode,
+        index_name_cn as indexNameCn,
+        index_desc as indexDesc,
+        category_fullcode as categoryFullcode
+        from
+        `index` i
+        where
+        1=1
+
+        <if test="keywords != null and keywords != ''">
+            and (index_name_cn like concat('%',#{keywords},'%') or index_keywords like concat('%',#{keywords},'%'))
+        </if>
+
+        <if test="isSm != null and isSm !=''">
+            and index_issecret = #{isSm}
+        </if>
+        <if test="categroyFullcode != null and categroyFullcode !=''">
+            and index_fullcode like concat('%',#{categroyFullcode},'_','%')
+        </if>
+        <if test="attrId != null and attrId !=''">
+            and index_id in (select index_id from index_to_attrs_dics where attr_id = #{attrId})
+        </if>
+
+    </select>
+
+    <select id="selectIndexName" resultType="java.util.Map">
+        select index_name_cn as `name`
+        from `index`
+        where category_fullcode = #{categoryFullcode}
+    </select>
+
+    <select id="selectAllCategoryNames" resultType="java.lang.String">
+        select category_name
+        from category
+        where
+            instr(concat(',', #{allFatherFullCode}, ','), concat(',', category_fullcode, ','))
+        order by category_id asc
+    </select>
+
+    <select id="getCategoryList" resultType="java.util.Map">
+        select
+            category_name     AS categoryName,
+            category_fullcode AS categoryFullcode,
+            category_pid      AS categoryPid,
+            category_id       AS categoryId
+        from category
+    </select>
+    <select id="getAllTopLevelCategory" resultMap="categoryResult">
+        select
+            category_id,
+            category_pid,
+            category_name,
+            category_fullcode,
+            category_code,
+            category_level,
+            category_desc,
+            category_creattime,
+            category_updatetime
+        from category
+        where category_pid = -1
+    </select>
+
+    <select id="getSearchTotalNumber"  resultType="java.lang.Integer">
+        select
+        COUNT(*)
+        from
+        `index` i
+        where
+        1=1
+        <if test="keywords != null and keywords != ''">
+            and (index_name_cn like concat('%',#{keywords},'%') or index_keywords like concat('%',#{keywords},'%'))
+        </if>
+
+        <if test="isSm != null and isSm !=''">
+            and index_issecret = #{isSm}
+        </if>
+        <if test="categroyFullcode != null and categroyFullcode !=''">
+            and index_fullcode like concat('%',#{categroyFullcode},'_','%')
+        </if>
+        <if test="attrId != null and attrId !=''">
+            and index_id in (select index_id from index_to_attrs_dics where attr_id = #{attrId})
+        </if>
+
+    </select>
+</mapper>

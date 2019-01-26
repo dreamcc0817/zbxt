@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.CategoryAttributesDicMapper">
+
+    <select id="getCategoryDictInfoDao" resultType="java.util.Map">
+        select
+        c.attr_id AS attrId,
+        c.dic_name AS dicName
+        from category_attributes_dic c
+        where c.attr_id = #{attrId}
+    </select>
+
+    <delete id="deleteCategoryAttributesDicByCategoryIdDao">
+        delete from category_attributes_dic where attr_id in (
+            select attr_id from category_attributes where category_fullcode in(
+              select category_fullcode from category
+                where category_id = #{categoryId} or category_fullcode like
+                  concat((select category_fullcode from category where category_id = #{categoryId}),'_%')
+            )
+        )
+    </delete>
+
+    <delete id="deleteCategoryAttributesDicByAttrIdDao">
+        delete from category_attributes_dic where attr_id = #{attrId}
+    </delete>
+
+    <delete id="deleteCategoryAttributesDicByAttrIdAndDicNameDao">
+        delete from category_attributes_dic where attr_id = #{attrId} and dic_name = #{dicName}
+    </delete>
+
+    <insert id="addCategoryAttributesDicDao">
+        insert into category_attributes_dic values (null,#{attrId},#{dicName})
+    </insert>
+</mapper>
+

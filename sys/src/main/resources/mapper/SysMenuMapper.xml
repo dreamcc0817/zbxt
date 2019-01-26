@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.SysMenuMapper">
+	<resultMap id="BaseResultMap" type="com.bonc.ioc.model.SysMenu">
+	</resultMap>
+	<sql id="SysMenuColumns">
+		m.id AS id,
+		m.menu_pcode AS menuPcode,
+		m.menu_code AS menuCode,
+		m.menu_name AS menuName,
+		m.menu_type AS menuType,
+		m.menu_url AS menuUrl,
+		m.menu_icon AS menuIcon,
+		m.menu_level AS menuLevel,
+		m.menu_effective_date AS menuEffectiveDate,
+		m.is_locked AS isLocked,
+		m.sort AS sort,
+		m.is_valid AS isValid,
+		m.extend1 AS extend1,
+		m.extend2 AS extend2,
+		m.create_acc_id AS createAccId,
+		m.create_time AS createTime,
+		m.update_acc_id AS updateAccId,
+		m.update_time AS updateTime,
+		m.remark AS remark
+
+	</sql>
+
+	<select id="getSysMenuList" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysMenu">
+		SELECT
+		m.id AS id,
+		m.menu_pcode AS menuPcode,
+		m.menu_code AS menuCode,
+		m.menu_name AS menuName,
+		m.menu_type AS menuType,
+		m.menu_url AS menuUrl,
+		m.menu_icon AS menuIcon,
+		m.menu_level AS menuLevel,
+		m.menu_effective_date AS menuEffectiveDate,
+		m.is_locked AS isLocked,
+		m.sort AS sort,
+		m.is_valid AS isValid,
+		m.extend1 AS extend1,
+		m.extend2 AS extend2,
+		m.create_acc_id AS createAccId,
+		m.create_time AS createTime,
+		m.update_acc_id AS updateAccId,
+		m.update_time AS updateTime,
+		m.remark AS remark
+		FROM
+		omp_sys_menu m
+		WHERE
+		m.is_valid = '1'
+		ORDER BY
+		m.sort
+	</select>
+
+
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_sys_menu where is_valid = 1
+	</select>
+
+	<update id="updateOtherMenuSort" flushCache="false">
+		UPDATE omp_sys_menu
+		set sort = sort+1
+		WHERE
+		sort>(#{sort}-1)
+		AND 
+		is_valid = 1 and menu_pcode = #{menuPCode}
+	</update>
+	
+	<select id="findSysMenuByMenuCodeAndSort" resultType="com.bonc.ioc.model.SysMenu">
+		SELECT 
+			<include refid="SysMenuColumns"></include>
+		FROM omp_sys_menu m
+		WHERE m.menu_pcode = #{menuPCode} and m.sort = #{sort} and m.is_valid = 1
+	</select>
+
+
+	<select id="selectByPage" parameterType="map"
+		resultType="com.bonc.ioc.model.SysMenu">
+		SELECT
+		<if test="!pagination">
+			<include refid="SysMenuColumns"></include>,reg.sys_name sysName,reg.sys_type sysType,odc.elem_name sysTypeName
+			
+		</if>
+		<if test="pagination">
+			count(m.id)
+		</if>
+
+
+		FROM omp_sys_menu m  left join  omp_rel_sys_menu menu  on  m.id=menu.menu_id 
+		left join omp_sys_register reg  on  menu.sys_id = reg.id 
+		left join omp_dic_element odc on odc.id = reg.sys_type
+	
+		 
+		 WHERE  m.is_valid = 1 
+
+
+		<if test="menuCode != null and menuCode != '' ">
+			and (  m.menu_code = #{menuCode} or m.menu_pcode = #{menuCode} )
+		</if>
+		<if test="menuName != null and menuName != '' ">
+			and  ( m.menu_name like '%${menuName}%' or m.menu_code like '%${menuName}%' )
+		</if>
+	</select>
+
+	<!-- 菜单管理列表 -->
+	<!--<select id="findSysMenu" parameterType="page" resultType="pd">-->
+		<!--SELECT-->
+		<!--m.menu_pcode menuPcode,-->
+		<!--m.menu_code menuCode,-->
+		<!--m.menu_name menuName,-->
+		<!--m.menu_type menuType,-->
+		<!--m.menu_url menuUrl,-->
+		<!--m.menu_icon menuIcon,-->
+		<!--m.menu_level menuLevel,-->
+		<!--m.menu_effective_date menuEffectiveDate,-->
+		<!--m.is_locked isLocked,-->
+		<!--m.sort AS sort,-->
+		<!--m.is_valid isValid,-->
+		<!--m.extend1 extend1,-->
+		<!--m.extend2 extend2,-->
+		<!--m.create_acc_id createAccId,-->
+		<!--m.create_time createTime,-->
+		<!--m.update_acc_id updateAccId,-->
+		<!--m.update_time updateTime,-->
+		<!--m.remark remark,-->
+		<!---->
+		<!--FROM omp_sys_menu m-->
+		<!---->
+		<!--WHERE m.is_valid = '1'-->
+				<!---->
+		<!--<if test="pd.menuName != null and pd.menuName != '' ">-->
+			<!--and m.menu_name like '%${pd.menuName}%'-->
+		<!--</if>-->
+		<!--<if test="pd.menuCode != null and pd.menuCode != '' ">-->
+			<!--and m.menu_code like '%${pd.menuCode}%'-->
+		<!--</if>-->
+		<!--<if test="pd.isValid != null and pd.isValid != '' ">-->
+			<!--and m.is_valid = #{pd.isValid}-->
+		<!--</if>-->
+		<!--ORDER BY-->
+		<!--m.sort-->
+	<!--</select>-->
+	
+	
+	<!-- 根据账户id，系统id查询账户可访问菜单列表 -->
+	<select id="findMenuList" parameterType="map" resultType="com.bonc.ioc.model.SysMenu">
+		SELECT DISTINCT
+			<include refid="SysMenuColumns"></include>
+		FROM
+			omp_rel_role_menu rm
+		LEFT JOIN omp_sys_menu m ON rm.menu_id = m.id
+		LEFT JOIN omp_rel_sys_menu sm ON sm.menu_id = m.id
+		WHERE
+			rm.is_valid = 1
+		AND sm.is_valid = 1
+		<if test="sysId !=null and sysId != ''">
+			AND sm.sys_id = #{sysId}
+		</if>
+		AND m.is_valid = 1
+		AND (
+			rm.role_id IN (
+				SELECT
+					ur.role_id
+				FROM
+					omp_rel_acc_role ur
+				WHERE
+					ur.is_valid = 1
+				AND ur.acc_id = #{accId}
+			)
+		)
+		ORDER BY
+			m.sort
+	</select>
+
+	<!-- 通过id获取数据 -->
+	<select id="findById" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysMenu" useCache="false">
+		SELECT
+		m.id AS
+		id,
+		m.menu_pcode menuPcode,
+		m.menu_code menuCode,
+		m.menu_name menuName,
+		m.menu_type menuType,
+		m.menu_url menuUrl,
+		m.menu_icon menuIcon,
+		m.menu_level menuLevel,
+		m.menu_effective_date menuEffectiveDate,
+		m.is_locked isLocked,
+		m.sort AS sort,
+		m.is_valid isValid,
+		m.extend1 extend1,
+		m.extend2 extend2,
+		m.create_acc_id createAccId,
+		m.create_time createTime,
+		m.update_acc_id updateAccId,
+		m.update_time updateTime,
+		m.remark remark,
+		
+		reg.sys_name sysName,
+		reg.sys_type sysType,
+		ptable.menu_name pMenueName,
+		
+		odc.elem_name sysTypeName
+		
+		FROM omp_sys_menu m  left join  omp_rel_sys_menu menu  on  m.id=menu.menu_id
+		left  join omp_sys_register reg  on  menu.sys_id = reg.id
+		LEFT JOIN (SELECT menu_code,menu_name FROM omp_sys_menu) AS ptable ON ptable.menu_code = m.menu_pcode
+	
+		left join omp_dic_element odc on odc.id = reg.sys_type
+		WHERE
+		m.is_valid = '1'
+		AND m.id = #{id}
+	</select>
+
+	<!-- 通过菜单编码获取菜单管理信息 -->
+	<select id="findSysMenuByMenuCode" parameterType="java.lang.String"	resultType="com.bonc.ioc.model.SysMenu">
+		SELECT
+			<include refid="SysMenuColumns"></include>
+		FROM omp_sys_menu m
+		WHERE
+		m.is_valid = '1'
+		AND m.menu_code = #{menuCode}
+	</select>
+
+	<!-- 删除 -->
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_menu
+		SET is_valid = '0'
+		WHERE is_valid = '1'
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+
+	<!-- 查询最大的菜单code -->
+	<select id="findMaxMenuCode" resultType="java.lang.String">
+		SELECT MAX(SUBSTR(MENU_CODE,6)) as code FROM omp_sys_menu where is_valid = 1
+	</select>
+
+	<!-- 新增 -->
+	<insert id="save" parameterType="com.bonc.ioc.dao.SysMenuMapper">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+			select replace(uuid(),'-','') from dual
+		</selectKey>
+		insert into omp_sys_menu
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="menuPcode != null">
+				menu_pcode,
+			</if>
+			<if test="menuCode != null">
+				menu_code,
+			</if>
+			<if test="menuName != null">
+				menu_name,
+			</if>
+			<if test="menuType != null">
+				menu_type,
+			</if>
+			<if test="menuUrl != null">
+				menu_url,
+			</if>
+			<if test="menuIcon != null">
+				menu_icon,
+			</if>
+			<if test="menuLevel != null">
+				menu_level,
+			</if>
+			<if test="menuEffectiveDate != null">
+				menu_effective_date,
+			</if>
+			<if test="isLocked != null">
+				is_locked,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=CHAR},
+			</if>
+			<if test="menuPcode != null">
+				#{menuPcode,jdbcType=VARCHAR},
+			</if>
+			<if test="menuCode != null">
+				#{menuCode,jdbcType=VARCHAR},
+			</if>
+			<if test="menuName != null">
+				#{menuName,jdbcType=VARCHAR},
+			</if>
+			<if test="menuType != null">
+				#{menuType,jdbcType=CHAR},
+			</if>
+			<if test="menuUrl != null">
+				#{menuUrl,jdbcType=VARCHAR},
+			</if>
+			<if test="menuIcon != null">
+				#{menuIcon,jdbcType=VARCHAR},
+			</if>
+			<if test="menuLevel != null">
+				#{menuLevel,jdbcType=INTEGER},
+			</if>
+			<if test="menuEffectiveDate != null">
+				#{menuEffectiveDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="isLocked != null">
+				#{isLocked,jdbcType=INTEGER},
+			</if>
+			<if test="sort != null">
+				#{sort,jdbcType=INTEGER},
+			</if>
+			<if test="isValid != null">
+				#{isValid,jdbcType=CHAR},
+			</if>
+			<if test="extend1 != null">
+				#{extend1,jdbcType=VARCHAR},
+			</if>
+			<if test="extend2 != null">
+				#{extend2,jdbcType=VARCHAR},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId,jdbcType=CHAR},
+			</if>
+			<if test="createTime != null">
+				#{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId,jdbcType=CHAR},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="remark != null">
+				#{remark,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.dao.SysMenuMapper"
+		flushCache="false">
+		UPDATE omp_sys_menu
+		<set>
+			<if test="menuPcode != null">
+				menu_pcode = #{menuPcode,jdbcType=VARCHAR},
+			</if>
+			<if test="menuCode != null">
+				menu_code = #{menuCode,jdbcType=VARCHAR},
+			</if>
+			<if test="menuName != null">
+				menu_name = #{menuName,jdbcType=VARCHAR},
+			</if>
+			<if test="menuType != null">
+				menu_type = #{menuType,jdbcType=CHAR},
+			</if>
+			<if test="menuUrl != null">
+				menu_url = #{menuUrl,jdbcType=VARCHAR},
+			</if>
+			<if test="menuIcon != null">
+				menu_icon = #{menuIcon,jdbcType=VARCHAR},
+			</if>
+			<if test="menuLevel != null">
+				menu_level = #{menuLevel,jdbcType=INTEGER},
+			</if>
+			<if test="menuEffectiveDate != null">
+				menu_effective_date = #{menuEffectiveDate,jdbcType=TIMESTAMP},
+			</if>
+			<if test="isLocked != null">
+				is_locked = #{isLocked,jdbcType=INTEGER},
+			</if>
+			<if test="sort != null">
+				sort = #{sort,jdbcType=INTEGER},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid,jdbcType=CHAR},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1,jdbcType=VARCHAR},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2,jdbcType=VARCHAR},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId,jdbcType=CHAR},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId,jdbcType=CHAR},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="remark != null">
+				remark = #{remark,jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE id = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="checkCanDel" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysMenu">
+		SELECT
+		<include refid="SysMenuColumns"></include>
+		FROM omp_sys_menu m
+		WHERE m.menu_pcode in(
+		SELECT
+		menu_code as menuCode
+		FROM omp_sys_menu
+		WHERE id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		)
+	</select>
+
+	<!--更新序列号 -->
+	<update id="addSort" parameterType="Integer" flushCache="false">
+		UPDATE
+		omp_sys_menu
+		set sort = sort+1
+		WHERE
+		sort>#{addSort}
+		AND
+		is_valid = '1'
+	</update>
+
+	<!--<update id="updateSort" parameterType="pd" flushCache="false">-->
+		<!--UPDATE omp_sys_menu-->
+		<!--<if test="operate !=null and operate=='before'">-->
+			<!--SET sort = sort + 1-->
+		<!--</if>-->
+		<!--<if test="operate !=null and operate=='after'">-->
+			<!--SET sort = sort - 1-->
+		<!--</if>-->
+		<!--WHERE-->
+		<!--sort > #{begin}-->
+		<!--AND sort &lt; #{end}-->
+		<!--AND is_valid = '1'-->
+	<!--</update>-->
+	
+	<!-- 根据角色id查询用户所属菜单列表 -->
+    <select id="findSysMenuListByRoleId" parameterType="map" resultType="com.bonc.ioc.model.SysMenu">
+        SELECT
+           <include refid="SysMenuColumns"></include>
+        FROM
+            omp_sys_menu m
+        WHERE
+            m.is_valid = 1
+            and m.id IN (
+                SELECT
+                    rm.menu_id
+                FROM
+                    omp_rel_role_menu rm
+                WHERE
+                    rm.is_valid = 1
+                AND rm.role_id IN (
+                    SELECT
+                        sr.role_id
+                    FROM
+                        omp_rel_sys_role sr
+                    WHERE
+                        rm.is_valid = 1
+                    AND sr.sys_id = #{sysId}
+                    AND sr.role_id = #{roleId}
+                )
+            )
+        ORDER BY
+            m.sort
+    </select>
+</mapper>

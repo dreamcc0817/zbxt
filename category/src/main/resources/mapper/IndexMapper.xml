@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.IndexMapper">
+
+
+    <update id="deleteRelationBetweenIndexAndGategoryDao">
+        update `index` set category_fullcode = null
+        where category_fullcode in
+        (
+        select category_fullcode from category
+                where category_id = #{categoryId} or category_fullcode like
+                  concat((select category_fullcode from category where category_id = #{categoryId}),'_%')
+        )
+    </update>
+
+    <select id="whetherCategoryHaveIndexDao" resultType="java.lang.Integer">
+        select count(*) from `index` where category_fullcode = (select  category_fullcode from category where category_id = #{categoryPid})
+    </select>
+
+    <update id="updateIndexWhenCategoryMoveDao">
+        update
+          `index`
+        set
+        <if test="moveBeforeFatherCategoryId != -1">
+            category_fullcode = replace(category_fullcode,#{moveBeforeFatherCategoryFullcode},#{moveAfterFatherCategoryFullcode})
+        </if>
+        <if test="moveBeforeFatherCategoryId == -1">
+            category_fullcode = concat(#{moveAfterFatherCategoryFullcode},category_fullcode)
+        </if>
+          ,
+        <if test="moveBeforeFatherCategoryId != -1">
+            index_fullcode = replace(index_fullcode,#{moveBeforeFatherCategoryFullcode},#{moveAfterFatherCategoryFullcode})
+        </if>
+        <if test="moveBeforeFatherCategoryId == -1">
+            index_fullcode = concat(#{moveAfterFatherCategoryFullcode},index_fullcode)
+        </if>
+        where
+          index_id
+        in
+          (
+            select
+              iii.index_id
+            from
+              (select tmp.* from `index` tmp) iii
+            where
+              iii.category_fullcode = #{moveCategoryFullcode}
+            or
+              iii.category_fullcode like concat(#{moveCategoryFullcode},'_%')
+          )
+    </update>
+</mapper>

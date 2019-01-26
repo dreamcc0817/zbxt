@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.SysRoleMapper" >
+  <sql id="roleColumns" >
+    osr.id AS id,
+	osr.role_code AS roleCode,
+	osr.role_name AS roleName,
+	osr.role_type AS roleType,
+	osr.role_icon AS roleIcon,
+	osr.role_desc AS roleDesc,
+	osr.sort AS sort,
+	osr.is_locked AS isLocked,
+	osr.is_valid AS isValid,
+	osr.extend1 AS extend1,
+	osr.extend2 AS extend2,
+	osr.create_time AS createTime,
+	osr.create_acc_id AS createAccId,
+	osr.update_time AS updateTime,
+	osr.update_acc_id AS updateAccId,
+	osr.remark AS remark
+  </sql>
+	
+	<!--<select id="findForList" parameterType="pd" resultType="pd">-->
+	   <!--select -->
+	    <!--omp_sys_role.id,-->
+	    <!--omp_sys_role.role_code,-->
+	    <!--omp_sys_role.role_name,-->
+	    <!--omp_sys_role.role_type,-->
+	    <!--omp_sys_role.role_icon,-->
+	    <!--omp_sys_role.role_desc,-->
+	    <!--omp_sys_role.sort,-->
+	    <!--omp_sys_role.is_locked,-->
+	    <!--omp_sys_role.is_valid,-->
+	    <!--omp_sys_role.extend1,-->
+	    <!--omp_sys_role.extend2,-->
+	    <!--omp_sys_role.create_time,-->
+	    <!--omp_sys_role.create_acc_id,-->
+	    <!--omp_sys_role.update_time,-->
+	    <!--omp_sys_role.update_acc_id,-->
+	    <!--omp_sys_role.remark-->
+	    <!--from omp_sys_role-->
+	    <!--left join omp_dic_element e on e.id=omp_sys_role.role_type-->
+	    <!--where omp_sys_role.is_valid=1-->
+	    <!--<if test="roleType != null and roleType != '' ">-->
+			<!--and omp_sys_role.role_type = #{pd.roleType}-->
+		<!--</if>		-->
+  <!--</select>-->
+	
+	 <select id="getAccByRoleId" parameterType="java.lang.String" resultType="java.lang.String" useCache="false">
+        SELECT
+            role.id as id,
+            role.acc_id as sccId
+        FROM omp_rel_acc_role role
+        WHERE
+            role.is_valid = '1'
+            and role.role_id = #{roleId}
+    </select>
+   <select id="getSysByRoleId" parameterType="java.lang.String" resultType="java.lang.String" useCache="false">
+        SELECT
+            role.id as id,
+            role.sys_id as sysId
+        FROM omp_rel_sys_role role
+        WHERE
+            role.is_valid = '1'
+            and role.role_id = #{roleId}
+    </select>
+    
+     <select id="getSysByRoleType" parameterType="java.lang.String" resultType="java.lang.String" useCache="false">
+        SELECT
+            role.id as id,
+            role.role_type as roleType
+        FROM omp_sys_role role
+        WHERE
+            role.is_valid = '1'
+            and role.role_type = #{dicElemId}
+    </select>
+	<!-- 通过id获取数据 -->
+	<select id="findById" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysRole">
+		SELECT
+		osr.id AS id,
+		osr.role_code AS roleCode,
+		osr.role_name AS roleName,
+		osr.role_type AS roleType,
+		osr.role_icon AS roleIcon,
+		osr.role_desc AS roleDesc,
+		osr.sort AS sort,
+		osr.is_locked AS isLocked,
+		osr.is_valid AS isValid,
+		osr.extend1 AS extend1,
+		osr.extend2 AS extend2,
+		osr.create_time AS createTime,
+		osr.create_acc_id AS createAccId,
+		osr.update_time AS updateTime,
+		osr.update_acc_id AS updateAccId,
+		osr.remark AS remark
+		FROM omp_sys_role osr
+		WHERE
+			osr.is_valid = '1'
+			AND osr.id = #{id}
+	</select>
+	
+	<!-- 通过机构编码获取角色管理信息 -->
+	<select id="findByCode" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRole">
+		SELECT
+		osr.id AS id,
+		osr.role_code AS roleCode,
+		osr.role_name AS roleName,
+		osr.role_type AS roleType,
+		osr.role_icon AS roleIcon,
+		osr.role_desc AS roleDesc,
+		osr.sort AS sort,
+		osr.is_locked AS isLocked,
+		osr.is_valid AS isValid,
+		osr.extend1 AS extend1,
+		osr.extend2 AS extend2,
+		osr.create_time AS createTime,
+		osr.create_acc_id AS createAccId,
+		osr.update_time AS updateTime,
+		osr.update_acc_id AS updateAccId,
+		osr.remark AS remark
+		FROM omp_sys_role osr
+		WHERE
+		osr.role_code = #{roleCode}
+	</select>
+	
+	<update id="updateOtherRoleSort" flushCache="false">
+			UPDATE omp_sys_role
+			set sort = sort+1
+			WHERE
+			sort>(#{sort}-1)
+			AND 
+			is_valid = 1
+		</update>
+	
+	<!-- 保存 -->
+<insert id="save" parameterType="com.bonc.ioc.model.SysRole" flushCache="false">
+  <selectKey keyProperty="id" resultType="String" order="BEFORE">
+            select replace(uuid(),'-','') from dual 		
+  </selectKey>
+  INSERT INTO omp_sys_role
+  <trim prefix="(" suffix=")" suffixOverrides=",">
+		  <if test="id != null">
+			id,
+		</if>
+		<if test="roleCode != null">
+			role_code,
+		</if>
+		<if test="roleName != null">
+			role_name,
+		</if>
+		<if test="roleType != null">
+			role_type,
+		</if>
+		<if test="roleIcon != null">
+			role_icon,
+		</if>
+		<if test="roleDesc != null">
+			role_desc,
+		</if>
+		<if test="sort != null">
+			sort,
+		</if>
+		<if test="isLocked != null">
+			is_locked,
+		</if>
+		<if test="isValid != null">
+			is_valid,
+		</if>
+		<if test="extend1 != null">
+			extend1,
+		</if>
+		<if test="extend2 != null">
+			extend2,
+		</if>
+		<if test="createTime != null">
+			create_time,
+		</if>
+		<if test="createAccId != null">
+			create_acc_id,
+		</if>
+		<if test="updateTime != null">
+			update_time,
+		</if>
+		<if test="updateAccId != null">
+			update_acc_id,
+		</if>
+		<if test="remark != null">
+			remark,
+		</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+		<if test="id != null">
+			#{id},
+		</if>
+		<if test="roleCode != null">
+			#{roleCode},
+		</if>
+		<if test="roleName != null">
+			#{roleName},
+		</if>
+		<if test="roleType != null">
+			#{roleType},
+		</if>
+		<if test="roleIcon != null">
+			#{roleIcon},
+		</if>
+		<if test="roleDesc != null">
+			#{roleDesc},
+		</if>
+		<if test="sort != null">
+			#{sort},
+		</if>
+		<if test="isLocked != null">
+			#{isLocked},
+		</if>
+		<if test="isValid != null">
+			#{isValid},
+		</if>
+		<if test="extend1 != null">
+			#{extend1},
+		</if>
+		<if test="extend2 != null">
+			#{extend2},
+		</if>
+		<if test="createTime != null">
+			#{createTime},
+		</if>
+		<if test="createAccId != null">
+			#{createAccId},
+		</if>
+		<if test="updateTime != null">
+			#{updateTime},
+		</if>
+		<if test="updateAccId != null">
+			#{updateAccId},
+		</if>
+		<if test="remark != null">
+			#{remark},
+		</if>
+</trim>
+  </insert>
+	
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.model.SysRole" flushCache="false">
+		UPDATE omp_sys_role
+		<set>
+			<if test="id != null">
+	            id = #{id},
+			</if>
+			<if test="roleCode != null">
+				role_code = #{roleCode},
+			</if>
+			<if test="roleName != null">
+				role_name = #{roleName},
+			</if>
+			<if test="roleType != null">
+				role_type = #{roleType},
+			</if>
+			<if test="roleIcon != null">
+				role_icon = #{roleIcon},
+			</if>
+			<if test="roleDesc != null">
+				role_desc = #{roleDesc},
+			</if>
+			<if test="sort != null">
+				sort = #{sort},
+			</if>
+			<if test="isLocked != null">
+				is_locked = #{isLocked},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="remark != null">
+				remark = #{remark},
+			</if>
+
+		</set>
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 删除 -->
+  <delete id="delete" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_sys_role
+        SET is_valid = 0
+		WHERE is_valid = 1
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  </delete>
+	
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_sys_role where is_valid = 1
+	</select>
+	
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.SysRole">
+		SELECT 
+		 	<if test="!pagination">
+		 		<include refid="roleColumns"></include>
+			</if>
+			<if test="pagination">
+				count(osr.id)
+			</if>
+		FROM omp_sys_role osr 
+		WHERE osr.is_valid =1 
+		<if test="roleCode != null and roleCode != '' ">
+			and  osr.role_code like '%${roleCode}%'
+		</if>
+		<if test="roleName != null and roleName != '' ">
+			and  osr.role_name like '%${roleName}%'
+		</if>
+		<if test="roleType != null and roleType != '' ">
+			and  osr.role_type = #{roleType}
+		</if>
+		<if test="isLocked != null and isLocked != '' ">
+			and osr.is_locked = #{isLocked}
+		</if>
+		<if test="id != null and id != '' ">
+			and  osr.id = #{id}
+		</if>
+	</select>
+	
+	<select id="getSysRoleListByRoleType" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysRole">
+		SELECT 
+		 		<include refid="roleColumns"></include>
+		FROM omp_sys_role osr 
+		WHERE osr.is_valid =1 
+		<if test="roleType != null and roleType != '' ">
+			and  osr.role_type = #{roleType}
+		</if>
+	</select>
+	
+	
+	<!-- 查询最大的菜单code -->
+	<select id="findMaxRoleCode" resultType="java.lang.String">
+		SELECT MAX(SUBSTR(ROLE_CODE,6)) as code FROM omp_sys_role WHERE ROLE_CODE != 'admin'
+	</select>
+</mapper>

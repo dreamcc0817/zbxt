@@ -1,0 +1,1042 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.indexDao">
+
+    <!-- 指标分页列表查询-->
+    <select id="selectByPageIndexList" resultType="java.util.Map">
+       SELECT
+        dex.index_id AS indexId,
+        dex.index_code AS indexCode,
+        dex.index_name_cn AS indexNameCn,
+        dex.index_status AS indexStatus,
+        DATE_FORMAT(dex.index_updatetime,'%Y-%m-%d %T') AS indexUpdatetime,
+        dex.category_fullcode as  categoryFullcode
+        FROM
+        `index` dex
+        WHERE
+        1 = 1
+        <if test="indexCode !=null and indexCode!='' ">
+            AND dex.index_code =#{indexCode}
+        </if>
+        <if test="indexNameCn !=null and indexNameCn!='' ">
+            AND dex.index_name_cn =#{indexNameCn}
+        </if>
+        <if test="indexStatus !=null and indexStatus!='' ">
+            AND dex.index_status =#{indexStatus}
+        </if>
+        <if test="categoryFullcode !=null and categoryFullcode!='' ">
+            AND dex.category_fullcode =#{categoryFullcode}
+        </if>
+        <if test="sortby !=null and sortby!='' ">
+            ORDER BY ${sortby}
+            <if test="order !=null and order!='' ">
+                ${order}
+            </if>
+        </if>
+    </select>
+
+
+    <!-- 指标目录查询-->
+    <select id="selectCategoryList" resultType="java.util.Map">
+        SELECT
+            cate.category_id AS categoryId,
+            cate.category_name AS categoryName,
+            cate.category_fullcode AS categoryFullcode
+        FROM
+            category cate
+        WHERE
+            1 = 1
+        <if test="categoryFullcode !=null and categoryFullcode!='' ">
+        AND cate.category_fullcode IN ( ${categoryFullcode} )
+        </if>
+        ORDER BY
+            cate.category_level
+    </select>
+    <!--修改指标状态-->
+    <update id="editIndexStatus" parameterType="java.util.Map">
+        update `index`
+        <set>
+           <if test="indexStatus !=nul and indexStatus !=''">
+               index_status=#{indexStatus}
+           </if>
+        </set>
+        where index_id = #{indexId}
+    </update>
+    <!--删除指标基本信息-->
+    <delete id="deleteIndexId" parameterType="java.lang.String">
+        <if test="_parameter !=null and _parameter !=''">
+           DELETE
+              FROM
+              `index`
+              WHERE
+              index_id = #{_parameter}
+        </if>
+    </delete>
+    <!--删除指标参考依据关联-->
+    <delete id="deleteIndexToDocument" parameterType="java.lang.String">
+        <if test="_parameter !=null and _parameter !=''">
+           DELETE
+              FROM
+              index_to_document
+              WHERE
+              index_id = #{_parameter}
+        </if>
+    </delete>
+    <!--根据indexId和docId和dataType删除index_to_document表中的记录-->
+    <delete id="deleteIndexToDocumentByDataType" parameterType="java.util.Map">
+        <if test="indexId !=null and indexId !='' and docId !=null and docId !=''">
+            DELETE
+            FROM
+            index_to_document
+            WHERE
+            index_id = #{indexId}
+            AND doc_id=#{docId}
+            AND data_type=#{dataType}
+        </if>
+    </delete>
+    <!--删除指标类目字典根据指标主键-->
+    <delete id="deleteindexToAttrsDicsByIndexId" parameterType="java.lang.String">
+        <if test="_parameter !=null and _parameter !=''">
+           DELETE
+              FROM
+              index_to_attrs_dics
+              WHERE
+              index_id = #{_parameter}
+        </if>
+    </delete>
+    <!--  关键字列表查询-->
+    <select id="selectIndexKeywordsList" resultType="java.util.Map">
+        SELECT
+           keywords_id AS keywordsId,
+           keywords_name AS keywordsName
+        FROM
+          index_keywords
+        WHERE
+          1 = 1
+        <if test="_parameter !=null and _parameter!='' ">
+            AND keywords_name LIKE concat('%',#{_parameter},'%')
+        </if>
+    </select>
+
+    <!--  指标基本信息查询-->
+    <select id="selectIndexInfo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+            dex.index_desc AS indexDesc,
+            dex.index_alias_cn AS indexAliasCn,
+            dex.index_alias_en AS indexAliasEn,
+            dex.index_shortname_en AS indexShortnameEn,
+            dex.index_unit AS indexUnit,
+            dex.index_type AS indexType,
+            dex.index_attr AS indexAttr,
+            dex.index_isstandard AS indexIsstandard,
+            dex.index_standardfileid AS indexStandardfileid,
+            standard.doc_name AS indexStandardfileName,
+            standard.doc_saveurl AS indexStandardfileUrl,
+            standard.doc_code AS indexStandardfileNo,
+            dex.index_standardcode AS indexStandardcode,
+            dex.index_standardname AS indexStandardname,
+            dex.index_iscalculation AS indexIscalculation,
+            dex.index_technical AS indexTechnical,
+            dex.index_calculatefileid AS indexCalculatefileid,
+            calculate.doc_name AS indexCalculatefileName,
+            calculate.doc_saveurl AS indexCalculatefileaUrl,
+            dex.index_issecret AS indexIssecret,
+            dex.index_securitylevel AS indexSecuritylevel,
+            dex.index_sectetfileid AS indexSectetfileid,
+            dex.index_isaddtoreference AS indexIsaddtoreference,
+            sectet.doc_name AS indexSectetfileName,
+            sectet.doc_saveurl AS indexSectetfileUrl,
+            dex.index_remark AS indexRemark
+        FROM
+            `index` dex
+            LEFT JOIN document standard ON standard.doc_id = dex.index_standardfileid
+            LEFT JOIN document calculate ON calculate.doc_id = dex.index_calculatefileid
+            LEFT JOIN document sectet ON sectet.doc_id = dex.index_sectetfileid
+        WHERE
+            1 = 1
+        <if test="_parameter !=null and _parameter!='' ">
+            AND dex.index_id=#{_parameter}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--  指标顶部基本信息查询-->
+    <select id="selectIndexTopInfo" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+            dex.index_name_cn AS indexNameCn,
+            dex.index_code AS indexCode,
+            dex.index_keywords AS indexKeywords,
+            dex.category_fullcode AS categoryFullcode
+        FROM
+          `index` dex
+        WHERE
+          1 = 1
+        <if test="_parameter !=null and _parameter!='' ">
+            AND dex.index_id=#{_parameter}
+        </if>
+        LIMIT 1
+    </select>
+
+    <!--  指标的文件信息分页查询-->
+    <select id="selectByPageDocumentList" resultType="java.util.Map">
+        SELECT
+            doc.doc_id AS docId,
+            doc.doc_name AS docName,
+            doc.doc_type AS docType,
+            doc.doc_code AS docCode,
+            doc.doc_desc AS docDesc,
+            doc.doc_saveurl AS docSaveurl,
+            doc.doc_creator AS docCreator,
+            DATE_FORMAT(doc.doc_createtime,'%Y-%m-%d %T') AS docCreatetime,
+            doc.doc_updator AS docUpdator,
+            DATE_FORMAT(doc.doc_updatetime,'%Y-%m-%d %T') AS docUpdatetime,
+            dexToDoc.data_type AS dataType
+        FROM
+          document doc
+        LEFT JOIN index_to_document dexToDoc ON doc.doc_id = dexToDoc.doc_id
+        WHERE
+          1 = 1
+           AND dexToDoc.data_type IN ( '0', '1' )
+        <if test="indexId !=null and indexId!='' ">
+            AND dexToDoc.index_id=#{indexId}
+        </if>
+    </select>
+
+    <!--  指标的目录属性及属性字典分页查询-->
+    <select id="selectByPageAttrsDicsList" resultType="java.util.Map">
+        SELECT
+            attrs.attr_id as attrId,
+            attrs.attr_name_cn AS attrNameCn,
+            attrs.attr_issingle AS attrIssingle,
+            group_concat(dic.dic_name separator '、') AS dicName
+        FROM
+          `index` dex
+        LEFT JOIN index_to_attrs_dics toAttrsDics ON toAttrsDics.index_id = dex.index_id
+        LEFT JOIN category_attributes attrs ON attrs.attr_id = toAttrsDics.attr_id
+        LEFT JOIN category_attributes_dic dic ON dic.dic_id = toAttrsDics.dic_id
+        WHERE
+          1 = 1
+        <if test="indexId !=null and indexId!='' ">
+            AND dex.index_id=#{indexId}
+        </if>
+        GROUP BY
+          attrs.attr_name_cn
+    </select>
+
+    <!--  目录属性及字典名称分页查询-->
+    <select id="selectByPageDicsNameList" resultType="java.util.Map">
+        SELECT
+            attr.attr_id AS attrId,
+            attr.category_fullcode AS categoryFullcode,
+            attr.attr_name_cn AS attrNameCn,
+            attr.attr_name_en AS attrNameEn,
+            attr.attr_issingle AS attrIssingle,
+            attr.attr_isrequired AS attrIsrequired,
+            dic.dicName
+        FROM
+            category_attributes attr
+            LEFT JOIN (
+        SELECT
+            itad.attr_id,
+            group_concat( dic.dic_name SEPARATOR '、' ) AS dicName
+        FROM
+            index_to_attrs_dics itad
+            LEFT JOIN category_attributes attr ON attr.attr_id = itad.attr_id
+            LEFT JOIN category_attributes_dic dic ON dic.dic_id = itad.dic_id
+        WHERE
+            1 = 1
+            <if test="allCode !=null and allCode!='' ">
+                AND attr.category_fullcode IN ( ${allCode} )
+            </if>
+            <if test="indexId !=null and indexId!='' ">
+                AND itad.index_id =#{indexId}
+            </if>
+        GROUP BY
+            attr.attr_name_cn
+            ) dic ON dic.attr_id = attr.attr_id
+        WHERE
+            1 = 1
+            <if test="allCode !=null and allCode!='' ">
+                AND attr.category_fullcode IN ( ${allCode} )
+            </if>
+    </select>
+
+    <!--  属性字典列表查询-->
+    <select id="selectDicList" resultType="java.util.Map" parameterType="java.lang.String">
+        SELECT
+            dic.dic_id AS dicId,
+            dic.attr_id AS attrId,
+            dic.dic_name AS dicName,
+            attr.attr_issingle AS attrIssingle,
+            itad.dataType AS dataType
+        FROM
+            category_attributes_dic dic
+        LEFT JOIN category_attributes attr ON attr.attr_id = dic.attr_id
+        LEFT JOIN ( SELECT dic_id AS dicId, data_type AS dataType FROM index_to_attrs_dics
+                    WHERE
+                        1 = 1
+                        <if test="indexId !=null and indexId !=''">
+                            AND index_id =#{indexId}
+                        </if>
+                        <if test="attrId !=null and attrId !=''">
+                            AND attr_id =#{attrId}
+                        </if>
+                    ) itad ON itad.dicId = dic.dic_id
+        WHERE
+            1 = 1
+        <if test="attrId !=null and attrId !=''">
+            AND dic.attr_id =#{attrId}
+        </if>
+    </select>
+    <!--  查询文件列表（分页）-->
+    <select id="selectByPageTypeAndName" resultType="java.util.Map">
+        SELECT
+        doc.doc_id AS docId,
+        doc.doc_name AS docName,
+        doc.doc_type AS docType,
+        doc.doc_code AS docCode,
+        doc.doc_desc AS docDesc,
+        doc.doc_creator AS docCreator,
+        DATE_FORMAT(doc.doc_updatetime,'%Y-%m-%d %T') AS docUpdatetime
+        <if test="indexId !=null and indexId!='' ">
+        ,DATE_FORMAT(ix.index_updatetime,'%Y-%m-%d %T') AS indexUpdatetime,
+        dexToDoc.data_type AS dataType
+        </if>
+        FROM
+        document doc
+        <if test="indexId !=null and indexId!='' ">
+        LEFT JOIN (select doc_id,index_id,data_type from index_to_document
+        where 1 = 1
+        AND index_to_document.index_id=#{indexId}
+        )
+        as dexToDoc ON doc.doc_id = dexToDoc.doc_id
+        LEFT JOIN `INDEX` ix ON dexToDoc.index_id = ix.index_id
+        </if>
+        WHERE
+        1 = 1
+        <if test="docType !=null and docType!='' ">
+            AND doc.doc_type=#{docType}
+        </if>
+        <if test="docName !=null and docName!='' ">
+            AND doc.doc_name LIKE concat('%',concat(#{docName},'%'))
+        </if>
+    </select>
+
+    <!--  根据docId查询文件-->
+    <select id="getFileByDocId" parameterType="java.lang.String" resultType="java.util.Map">
+        SELECT
+        doc.doc_id AS docId,
+        doc.doc_name AS docName,
+        doc.doc_type AS docType,
+        doc.doc_code AS docCode,
+        doc.doc_desc AS docDesc,
+        doc.doc_saveurl AS docSaveurl
+        FROM
+        document doc
+        WHERE
+        1 =1
+        <if test="docId !=null and docId !=''">
+            AND doc.doc_id=#{docId}
+        </if>
+    </select>
+
+    <!--指标基本信息增加-->
+    <insert id="addIndex" useGeneratedKeys="true" keyProperty="indexId" parameterType="com.bonc.ioc.model.IndexInfo">
+        insert into `index` (
+        <trim suffixOverrides=",">
+            <if test="indexDesc !=null">
+                index_desc,
+            </if>
+            <if test="indexAliasCn !=null">
+                index_alias_cn,
+            </if>
+            <if test="indexAliasEn !=null">
+                index_alias_en,
+            </if>
+            <if test="indexShortnameEn !=null">
+                index_shortname_en,
+            </if>
+            <if test="indexUnit !=null">
+                index_unit,
+            </if>
+            <if test="indexType !=null">
+                index_type,
+            </if>
+            <if test="indexAttr !=null">
+                index_attr,
+            </if>
+            <if test="indexIsstandard !=null">
+                index_isstandard,
+            </if>
+            <if test="indexStandardfileid !=null">
+                index_standardfileid,
+            </if>
+            <if test="indexStandardcode !=null">
+                index_standardcode,
+            </if>
+            <if test="indexStandardname !=null">
+                index_standardname,
+            </if>
+            <if test="indexIscalculation !=null">
+                index_iscalculation,
+            </if>
+            <if test="indexTechnical !=null">
+                index_technical,
+            </if>
+            <if test="indexCalculatefileid !=null">
+                index_calculatefileid,
+            </if>
+            <if test="indexIssecret !=null">
+                index_issecret,
+            </if>
+            <if test="indexSecuritylevel !=null">
+                index_securitylevel,
+            </if>
+            <if test="indexSectetfileid !=null">
+                index_sectetfileid,
+            </if>
+            <if test="indexRemark !=null">
+                index_remark,
+            </if>
+            <if test="categoryFullcode !=null">
+                category_fullcode,
+            </if>
+            <if test="indexNameCn !=null">
+                index_name_cn,
+            </if>
+            <if test="indexKeywords !=null">
+                index_keywords,
+            </if>
+            <if test="indexId !=null">
+                index_id,
+            </if>
+            <if test="indexFullcode !=null">
+                index_fullcode,
+            </if>
+        </trim>
+        ) values(
+        <trim suffixOverrides=",">
+            <if test="indexDesc !=null">
+                #{ indexDesc},
+            </if>
+            <if test="indexAliasCn !=null">
+                #{ indexAliasCn},
+            </if>
+            <if test="indexAliasEn !=null">
+                #{ indexAliasEn},
+            </if>
+            <if test="indexShortnameEn !=null">
+                #{indexShortnameEn },
+            </if>
+            <if test="indexUnit !=null">
+                #{ indexUnit},
+            </if>
+            <if test="indexType !=null">
+                #{indexType },
+            </if>
+            <if test="indexAttr !=null">
+                #{indexAttr },
+            </if>
+            <if test="indexIsstandard !=null">
+                #{ indexIsstandard},
+            </if>
+            <if test="indexStandardfileid !=null">
+                #{indexStandardfileid },
+            </if>
+            <if test="indexStandardcode !=null">
+                #{indexStandardcode },
+            </if>
+            <if test="indexStandardname !=null">
+                #{ indexStandardname},
+            </if>
+            <if test="indexIscalculation !=null">
+                #{ indexIscalculation},
+            </if>
+            <if test="indexTechnical !=null">
+                #{indexTechnical },
+            </if>
+            <if test="indexCalculatefileid !=null">
+                #{ indexCalculatefileid},
+            </if>
+            <if test="indexIssecret !=null">
+                #{indexIssecret },
+            </if>
+            <if test="indexSecuritylevel !=null">
+                #{ indexSecuritylevel},
+            </if>
+            <if test="indexSectetfileid !=null">
+                #{ indexSectetfileid},
+            </if>
+            <if test="indexRemark !=null">
+                #{indexRemark },
+            </if>
+            <if test="categoryFullcode !=null">
+                #{categoryFullcode },
+            </if>
+            <if test="indexNameCn !=null">
+                #{indexNameCn },
+            </if>
+            <if test="indexKeywords !=null">
+                #{indexKeywords },
+            </if>
+            <if test="indexId !=null">
+                #{indexId },
+            </if>
+            <if test="indexFullcode !=null">
+                #{indexFullcode},
+            </if>
+        </trim>
+        )
+    </insert>
+	
+	<!--新增指标顶部-->
+    <insert id="addTopIndex" useGeneratedKeys="true" keyProperty="indexId" parameterType="com.bonc.ioc.model.TopIndexInfo">
+        insert into `index` (
+        <trim suffixOverrides=",">
+            <if test="indexNameCn !=null">
+                index_name_cn,
+            </if>
+            <if test="indexCode !=null">
+                index_code,
+            </if>
+            <if test="indexKeywords !=null">
+                index_keywords,
+            </if>
+        </trim>
+        ) values(
+        <trim suffixOverrides=",">
+            <if test="indexNameCn !=null">
+                #{indexNameCn },
+            </if>
+            <if test="indexCode !=null">
+                #{indexCode },
+            </if>
+            <if test="indexKeywords !=null">
+                #{indexKeywords},
+            </if>
+        </trim>
+        )
+    </insert>
+	
+	<!--顶部指标修改-->
+    <update id="updateTopIndex" parameterType="com.bonc.ioc.model.TopIndexInfo">
+        update `index`
+        <set>
+            <if test="indexNameCn !=null">
+                index_name_cn=#{indexNameCn},
+            </if>
+            <if test="indexCode !=null">
+                index_code=#{indexCode},
+            </if>
+            <if test="indexKeywords !=null">
+                index_keywords=#{indexKeywords},
+            </if>
+        </set>
+        where index_id = #{indexId}
+    </update>
+
+    <!--关键字增加-->
+    <insert id="addKeywords" parameterType="java.lang.String">
+        INSERT INTO index_keywords(
+            <if test="keywordsName !=null">
+                keywords_name
+            </if>
+        ) VALUES(
+            <if test="keywordsName !=null">
+                #{keywordsName}
+            </if>
+        )
+    </insert>
+
+    <!--指标类目字典表删除该指标非传值目录的关联关系-->
+    <delete id="deleteIndexToAttrsDicsByCode" parameterType="java.util.HashMap">
+        <if test="indexId !=null and indexId !='' and categoryFullcode !=null and categoryFullcode!=''">
+            DELETE
+            FROM
+            index_to_attrs_dics
+            WHERE
+            1 = 1
+            AND index_id = #{indexId}
+            AND attr_id NOT IN (
+            SELECT
+            attr_id
+            FROM
+            category_attributes
+            WHERE
+            category_fullcode IN (${categoryFullcode})
+            )
+        </if>
+    </delete>
+
+    <!--指标参考依据关联表增加-->
+    <insert id="addIndexToDocument" parameterType="java.util.HashMap">
+        insert into index_to_document (
+        <trim suffixOverrides=",">
+            <if test="pkid !=null">
+                pkid,
+            </if>
+            <if test="indexId !=null">
+                index_id,
+            </if>
+            <if test="docId !=null">
+                doc_id,
+            </if>
+        </trim>
+        ) values(
+        <trim suffixOverrides=",">
+            <if test="pkid !=null">
+                #{pkid},
+            </if>
+            <if test="indexId !=null">
+                #{indexId},
+            </if>
+            <if test="docId !=null">
+                #{docId},
+            </if>
+        </trim>
+        )
+    </insert>
+
+    <!--关系表index_to_document添加数据，状态暂存(1)-->
+    <insert id="insertIndexToDoc" parameterType="java.util.Map">
+        insert into index_to_document (
+        <trim suffixOverrides=",">
+            <if test="indexId !=null">
+                index_id,
+            </if>
+            <if test="docId !=null">
+                doc_id,
+            </if>
+            <if test="dataType !=null">
+                data_type,
+            </if>
+        </trim>
+        )
+        values(
+        <trim suffixOverrides=",">
+            <if test="indexId !=null">
+                #{indexId},
+            </if>
+            <if test="docId !=null">
+                #{docId},
+            </if>
+            <if test="dataType !=null">
+                #{dataType},
+            </if>
+        </trim>
+        )
+    </insert>
+
+    <!--指标类目字典表增加-->
+    <insert id="addIndexToAttrsDics" parameterType="java.util.HashMap">
+        insert into index_to_attrs_dics (
+        <trim suffixOverrides=",">
+            <if test="pkid !=null">
+                pkid,
+            </if>
+            <if test="indexId !=null">
+                index_id,
+            </if>
+            <if test="attrId !=null">
+                attr_id,
+            </if>
+            <if test="dicId !=null">
+                dic_id,
+            </if>
+            <if test="dataType !=null">
+                data_type,
+            </if>
+        </trim>
+        ) values(
+        <trim suffixOverrides=",">
+            <if test="pkid !=null">
+                #{pkid},
+            </if>
+            <if test="indexId !=null">
+                #{indexId},
+            </if>
+            <if test="attrId !=null">
+                #{attrId},
+            </if>
+            <if test="dicId !=null">
+                #{dicId},
+            </if>
+            <if test="dataType !=null">
+                #{dataType},
+            </if>
+        </trim>
+        )
+    </insert>
+    <!--指标修改-->
+    <update id="updateIndex" parameterType="com.bonc.ioc.model.IndexInfo">
+        update `index`
+        <set>
+            <if test="indexDesc !=null">
+                index_desc=#{indexDesc},
+            </if>
+            <if test="indexAliasCn !=null">
+                index_alias_cn=#{indexAliasCn},
+            </if>
+            <if test="indexAliasEn !=null">
+                index_alias_en=#{indexAliasEn},
+            </if>
+            <if test="indexShortnameEn !=null">
+                index_shortname_en=#{indexShortnameEn},
+            </if>
+            <if test="indexUnit !=null">
+                index_unit=#{indexUnit},
+            </if>
+            <if test="indexType !=null">
+                index_type=#{indexType},
+            </if>
+            <if test="indexAttr !=null">
+                index_attr=#{indexAttr},
+            </if>
+            <if test="indexIsstandard !=null">
+                index_isstandard=#{indexIsstandard},
+            </if>
+            <if test="indexStandardfileid !=null">
+                index_standardfileid=#{indexStandardfileid},
+            </if>
+            <if test="indexStandardcode !=null">
+                index_standardcode=#{indexStandardcode},
+            </if>
+            <if test="indexStandardname !=null">
+                index_standardname=#{indexStandardname},
+            </if>
+            <if test="indexIscalculation !=null">
+                index_iscalculation=#{indexIscalculation},
+            </if>
+            <if test="indexTechnical !=null">
+                index_technical=#{indexTechnical},
+            </if>
+            <if test="indexCalculatefileid !=null">
+                index_calculatefileid=#{indexCalculatefileid},
+            </if>
+            <if test="indexIssecret !=null">
+                index_issecret=#{indexIssecret},
+            </if>
+            <if test="indexSecuritylevel !=null">
+                index_securitylevel=#{indexSecuritylevel},
+            </if>
+            <if test="indexSectetfileid !=null">
+                index_sectetfileid=#{indexSectetfileid},
+            </if>
+            <if test="indexRemark !=null">
+                index_remark=#{indexRemark},
+            </if>
+            <if test="categoryFullcode !=null">
+                category_fullcode=#{categoryFullcode},
+            </if>
+            <if test="indexNameCn !=null">
+                index_name_cn=#{indexNameCn},
+            </if>
+            <if test="indexKeywords !=null">
+                index_keywords=#{indexKeywords},
+            </if>
+            <if test="indexFullcode !=null">
+                index_fullcode=#{indexFullcode},
+            </if>
+        </set>
+        where index_id = #{indexId}
+    </update>
+
+    <!--指标类目字典表修改数据状态-->
+    <update id="updateIndexToAttrsDicsIndexId" parameterType="java.util.HashMap">
+        update index_to_attrs_dics
+        <set>
+            <if test="dataType !=null and dataType !=''">
+                data_type=#{dataType},
+            </if>
+        </set>
+        where  1=1
+        <if test="indexId !=null and indexId !=''">
+            AND  index_id=#{indexId}
+        </if>
+        <if test="attrId !=null and attrId !=''">
+            AND  attr_id=#{attrId}
+        </if>
+        <if test="dicId !=null and dicId !=''">
+            AND  dic_id=#{dicId}
+        </if>
+        <if test="pkid !=null and pkid !=''">
+            AND   pkid=#{pkid}
+        </if>
+        <if test="paramDataType !=null and paramDataType !=''">
+            AND   data_type=#{paramDataType}
+        </if>
+        <if test="notDicIdArray !=null and notDicIdArray !=''">
+            AND  dic_id  NOT IN (${notDicIdArray})
+        </if>
+        <if test="dicIdArray !=null and dicIdArray !=''">
+            AND  dic_id   IN (${dicIdArray})
+        </if>
+    </update>
+
+    <!--标准文件增加(自动生成id)-->
+    <insert id="insertDocument" parameterType="com.bonc.ioc.model.DocumentInfo">
+        insert into document (
+        <trim suffixOverrides=",">
+            <if test="docName !=null">
+                doc_name,
+            </if>
+            <if test="docType !=null">
+                doc_type,
+            </if>
+            <if test="docCode !=null">
+                doc_code,
+            </if>
+            <if test="docDesc !=null">
+                doc_desc,
+            </if>
+            <if test="docSaveurl !=null">
+                doc_saveurl,
+            </if>
+            <if test="docCreator !=null">
+                doc_creator,
+            </if>
+            <if test="docCreatetime !=null">
+                doc_createtime,
+            </if>
+            <if test="docUpdator !=null">
+                doc_updator,
+            </if>
+            <if test="docUpdatetime !=null">
+                doc_updatetime,
+            </if>
+        </trim>
+        ) values(
+        <trim suffixOverrides=",">
+            <if test="docName !=null">
+                #{docName},
+            </if>
+            <if test="docType !=null">
+                #{docType},
+            </if>
+            <if test="docCode !=null">
+                #{docCode},
+            </if>
+            <if test="docDesc !=null">
+                #{docDesc},
+            </if>
+            <if test="docSaveurl !=null">
+                #{docSaveurl},
+            </if>
+            <if test="docCreator !=null">
+                #{docCreator},
+            </if>
+            <if test="docCreatetime !=null">
+                #{docCreatetime},
+            </if>
+            <if test="docUpdator !=null">
+                #{docUpdator},
+            </if>
+            <if test="docUpdatetime !=null">
+                #{docUpdatetime},
+            </if>
+        </trim>
+        )
+    </insert>
+
+    <!--标准文件修改-->
+    <update id="updateDocument" parameterType="com.bonc.ioc.model.DocumentInfo">
+        update document
+        <set>
+            <if test="docId !=null">
+                doc_id=#{docId},
+            </if>
+            <if test="docName !=null">
+                doc_name=#{docName},
+            </if>
+            <if test="docType !=null">
+                doc_type=#{docType},
+            </if>
+            <if test="docCode !=null">
+                doc_code=#{docCode},
+            </if>
+            <if test="docDesc !=null">
+                doc_desc=#{docDesc},
+            </if>
+            <if test="docSaveurl !=null">
+                doc_saveurl=#{docSaveurl},
+            </if>
+            <if test="docCreator !=null">
+                doc_creator=#{docCreator},
+            </if>
+            <if test="docCreatetime !=null">
+                doc_createtime=#{docCreatetime},
+            </if>
+            <if test="docUpdator !=null">
+                doc_updator=#{docUpdator},
+            </if>
+            <if test="docUpdatetime !=null">
+                doc_updatetime=#{docUpdatetime},
+            </if>
+        </set>
+        where doc_id =#{docId}
+    </update>
+
+    <!--指标参考依据关联表改数据状态-->
+    <update id="updateIndexToDocument" parameterType="java.util.HashMap">
+        update index_to_document
+        <set>
+            <if test="dataType !=null and dataType !=''">
+                data_type=#{dataType},
+            </if>
+        </set>
+        where  1=1
+        <if test="indexId !=null and indexId !=''">
+            AND  index_id=#{indexId}
+        </if>
+        <if test="docId !=null and docId !=''">
+            AND  doc_id=#{docId}
+        </if>
+        <if test="pkid !=null and pkid !=''">
+            AND   pkid=#{pkid}
+        </if>
+    </update>
+
+    <!--删除指标类目字典根据主键-->
+    <delete id="deleteIndexToAttrsDicsById" parameterType="java.util.HashMap">
+        <if test="indexId !=null and indexId !='' and notDicIdArray !=null and notDicIdArray !='' ">
+            DELETE
+            FROM
+            index_to_attrs_dics
+            WHERE 1=1
+           <if test="indexId !=null and indexId !=''">
+               AND index_id = #{indexId}
+           </if>
+           <if test="dicId !=null and dicId !=''">
+              AND  dic_id = #{dicId}
+           </if>
+            <if test="attrId !=null and attrId !=''">
+                AND  attr_id = #{attrId}
+            </if>
+            <if test="notDicIdArray !=null and notDicIdArray !=''">
+                AND  dic_id  NOT IN (${notDicIdArray})
+            </if>
+            <if test="paramDataType !=null and paramDataType !=''">
+                AND   data_type=#{paramDataType}
+            </if>
+        </if>
+    </delete>
+
+    <!--  查询指标类目字典行数-->
+    <select id="getIndexToAttrsDicsTotal" parameterType="java.lang.String" resultType="java.lang.Integer">
+       SELECT
+            COUNT( 1 ) AS total
+        FROM
+            index_to_attrs_dics
+        WHERE
+            1 = 1
+        <if test="indexId !=null and indexId !=''">
+            AND index_id = #{indexId}
+        </if>
+        <if test="attrId !=null and attrId !=''">
+            AND  attr_id = #{attrId}
+        </if>
+        <if test="paramDataType !=null and paramDataType !=''">
+            AND   data_type=#{paramDataType}
+        </if>
+    </select>
+    <!--修改index_to_document表的文件状态通过文件状态和指标id
+            index_to_document   ITD
+            data_type           DT
+            index_id            II-->
+    <update id="updateDTByDTeAndII">
+        <if test="beforDataType !=null and beforDataType != '' and
+        afterDataType !=null and afterDataType != '' and
+        indexId !=null and indexId != ''">
+            UPDATE index_to_document titd
+            SET titd.data_type = #{afterDataType}
+            WHERE
+            titd.data_type = #{beforDataType}
+            AND titd.index_id = #{indexId};
+        </if>
+    </update>
+    <!--通过index_to_document表的指标id和参考依据关联关系状态删除数据
+        index_to_document   ITD
+        data_type           DT
+        index_id            II-->
+    <delete id="deleteITDByDTeAndII">
+        <if test="dataType !=null and dataType != '' and indexId !=null and indexId != ''">
+            DELETE
+            FROM
+            index_to_document
+            WHERE
+            data_type = #{dataType}
+            AND index_id = #{indexId};
+        </if>
+    </delete>
+    <!--通过index_to_attrs_dics表的指标id和字典关联关系状态删除数据
+        index_to_attrs_dics     ITAD
+        data_type               DT
+        index_id                II-->
+    <delete id="deleteITADByDTeAndII">
+        <if test="dataType !=null and dataType != '' and indexId !=null and indexId != ''">
+            DELETE
+            FROM
+            index_to_attrs_dics
+            WHERE
+            index_id = #{indexId}
+            AND data_type = #{dataType}
+        </if>
+    </delete>
+    <!--修改index_to_attrs_dics表的关联字典状态通过关联状态和指标id事先删除非本类目下的字典
+        index_to_attrs_dics     ITAD
+        data_type               DTforeach
+        index_id                II-->
+    <delete id="deleteOtherdDics">
+        <if test="beforDataType !=null and beforDataType != '' and afterDataType !=null and afterDataType != '' and indexId !=null and indexId != '' and fullcodes != null and fullcodes != ''">
+            DELETE FROM
+            index_to_attrs_dics
+            WHERE
+            index_id = #{indexId}
+            AND
+            attr_id NOT IN (
+            SELECT
+            tca.attr_id attrId
+            FROM
+            category_attributes tca
+            WHERE
+            tca.category_fullcode
+            IN (${fullcodes})
+            );
+        </if>
+    </delete>
+    <!--修改index_to_attrs_dics表的关联字典状态通过关联状态和指标id修改在本目录下的数据状态
+        index_to_attrs_dics     ITAD
+        data_type               DT
+        attr_id                 AI
+        index_id                II-->
+    <update id="updateITADByDTeAndIIAndAI">
+        <if test="beforDataType !=null and beforDataType != '' and afterDataType !=null and afterDataType != '' and indexId !=null and indexId != '' and fullcodes != null and fullcodes != ''">
+            UPDATE index_to_attrs_dics titad
+            SET titad.data_type = #{afterDataType}
+            WHERE
+            titad.attr_id IN (
+            SELECT
+            tca.attr_id attrId
+            FROM
+            category_attributes tca
+            WHERE
+            tca.category_fullcode
+            IN (${fullcodes})
+            )
+            AND titad.index_id = #{indexId}
+            AND titad.data_type = #{beforDataType};
+        </if>
+    </update>
+    <!--修改index_to_attrs_dics表的关联字典状态通过关联状态和指标id修改在本目录下的数据状态
+        index_to_attrs_dics     ITAD
+        data_type               DT
+        index_id                II-->
+    <update id="updateITADByDTeAndII" >
+        <if test="beforDataType !=null and beforDataType != '' and afterDataType !=null and afterDataType != '' and indexId !=null and indexId != ''">
+            UPDATE index_to_attrs_dics titad
+            SET titad.data_type = #{afterDataType}
+            WHERE titad.index_id = #{indexId}
+            AND titad.data_type = #{beforDataType};
+        </if>
+    </update>
+</mapper>

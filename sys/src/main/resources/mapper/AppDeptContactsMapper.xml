@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.AppDeptContactsMapper">
+	<sql id="commonColumns">
+		zd.id AS id,
+		zd.dept_name AS deptName,
+		zd.dept_code AS deptCode,
+		zd.dept_phone AS deptPhone,
+		zd.is_abeld_coment AS isAbeldComent,
+		zd.parent_id AS parentId,
+		zd.create_date AS createDate,
+		zd.create_by AS createBy,
+		zd.update_by AS updateBy,
+		zd.update_date AS updateDate,
+		zd.dep_id AS depId,
+		zd.is_valid AS isValid,
+		zd.extend1 AS extend1,
+		zd.extend2 AS extend2
+	</sql>
+	
+	<!-- 通讯录添加部门的部门列表 -->
+	<select id="getDeptList" parameterType="string" resultType="com.bonc.ioc.model.DeptContacts">
+		SELECT
+		<include refid="commonColumns"></include>
+		FROM zhlq_dept zd
+		WHERE zd.is_valid = '1' AND zd.parent_id is NULL
+		<if test="keyword != null and keyword != ''">
+			AND zd.dept_name LIKE CONCAT('%',#{keyword},'%')
+		</if>
+	</select>
+	
+	<!-- 通讯录添加部门的部门列表 -->
+	<select id="getDeptIdsByAppUserId" parameterType="string" resultType="string">
+		SELECT
+		zaudr.dept_id deptId
+		FROM zhlq_app_user_dept_rel zaudr
+		WHERE zaudr.app_user_id = #{userId}
+	</select>
+	
+	<insert id="addDeptForUser" parameterType="string">
+		INSERT INTO zhlq_app_user_dept_rel(id, app_user_id, dept_id) VALUES (#{id}, #{userId}, #{deptId})
+	</insert>
+	
+	<select id="getDeptContactsList" parameterType="string" resultType="com.bonc.ioc.model.DeptContacts">
+		SELECT
+		<include refid="commonColumns"></include>
+		FROM
+			zhlq_app_user_dept_rel zaudr
+		LEFT JOIN zhlq_app_user zau ON zaudr.app_user_id = zau.id
+		LEFT JOIN zhlq_dept zd ON zaudr.dept_id = zd.id
+		LEFT JOIN zhlq_dept zdd ON zd.id = zdd.parent_id
+		WHERE
+			zau.id = #{userId}
+		UNION ALL
+			SELECT
+				zd.*
+			FROM
+				zhlq_dept zd
+			WHERE
+				zd.parent_id IN (
+					SELECT
+						zd.id
+					FROM
+						zhlq_app_user_dept_rel zaudr
+					LEFT JOIN zhlq_app_user zau ON zaudr.app_user_id = zau.id
+					LEFT JOIN zhlq_dept zd ON zaudr.dept_id = zd.id
+					LEFT JOIN zhlq_dept zdd ON zd.id = zdd.parent_id
+					WHERE
+						zau.id = #{userId}
+				)
+	</select>
+	
+</mapper>

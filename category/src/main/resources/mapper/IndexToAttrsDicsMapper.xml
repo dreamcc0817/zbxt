@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.IndexToAttrsDicsMapper">
+
+    <delete id="deleteIndexToAttrsDicsByCategoryIdDao">
+        delete from index_to_attrs_dics where
+          index_id in (
+            select index_id from `index` where category_fullcode in (
+              select category_fullcode from category
+                where category_id = #{categoryId} or category_fullcode like
+                  concat((select category_fullcode from category where category_id = #{categoryId}),'_%')
+            )
+          )
+    </delete>
+
+    <delete id="deleteIndexToAttrsDicsByAttrIdDao">
+        delete from index_to_attrs_dics where attr_id = #{attrId}
+    </delete>
+
+    <!--删除moveCategoryFullcode对应的下的指标与fatherCategoryFullcode对应的类目属性关联关系-->
+    <delete id="deleteWhenCategoryMoveDao">
+        delete
+        from
+          index_to_attrs_dics
+        where
+          attr_id
+            =
+          (select attr_id from category_attributes where category_fullcode = #{fatherCategoryFullcode})
+        and
+          index_id
+        in
+          (
+            select
+              index_id
+            from
+              `index`
+            where
+              category_fullcode = #{moveCategoryFullcode}
+            or
+              category_fullcode like concat(#{moveCategoryFullcode},'_%')
+          )
+    </delete>
+</mapper>

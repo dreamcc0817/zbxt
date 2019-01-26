@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.RelAccRoleMapper" >
+  
+  <sql id="Base_Column_List" >
+    id, acc_id, role_id, create_acc_id, create_time, update_acc_id, update_time, ts, 
+    is_valid
+  </sql>
+  <sql id="relAccRoleColumns" >
+    orar.id AS id,
+	orar.acc_id AS accId,
+	orar.role_id AS roleId,
+	orar.create_acc_id AS createAccId,
+	orar.create_time AS createTime,
+	orar.update_acc_id AS updateAccId,
+	orar.update_time AS updateTime,
+	orar.ts AS ts,
+	orar.is_valid AS isValid
+  </sql>
+  
+   
+   <!--<select id="findForList" parameterType="pd" resultType="pd">-->
+   <!--select -->
+    <!--<include refid="Base_Column_List" />-->
+    <!--from omp_rel_acc_role -->
+    <!--where omp_rel_acc_role.is_valid=1-->
+    <!--<if test="accountId != null and accountId != '' ">-->
+			<!--and acc_id = #{accountId}-->
+		<!--</if> -->
+		 <!--<if test="roleId != null and roleId != '' ">-->
+			<!--and role_id = #{roleId}-->
+		<!--</if> -->
+  <!--</select>-->
+  
+  <select id="getRelAccRoleList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelAccRole">
+   select 
+    <include refid="relAccRoleColumns" />
+    from omp_rel_acc_role orar
+    where orar.is_valid=1
+    <if test="accId != null and accId != '' ">
+			and orar.acc_id = #{accId}
+		</if> 
+		 <if test="roleId != null and roleId != '' ">
+			and orar.role_id = #{roleId}
+		</if> 
+  </select>
+  
+  
+  
+  <!-- <select id="findForRoleList" parameterType="pd" resultType="pd">
+   select 
+    <include refid="Base_Column_List" />
+    from omp_rel_acc_role 
+    where omp_rel_acc_role.is_valid=1
+    <if test="roleId != null and roleId != '' ">
+			and where role_id = #{roleId}
+		</if> 
+		
+  </select> -->
+  
+   <select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.RelAccRole">
+		SELECT 
+		 	<if test="!pagination">
+		 		<include refid="Base_Column_List"></include>
+			</if>
+			<if test="pagination">
+				count(relAccRole.id)
+			</if>
+		FROM omp_rel_acc_role relAccRole 
+		WHERE omp_rel_acc_role.is_valid=1 
+	</select>
+	
+	
+	<insert id="save" parameterType="com.bonc.ioc.model.RelAccRole" >
+    insert into omp_rel_acc_role
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="accId != null" >
+        acc_id,
+      </if>
+      <if test="roleId != null" >
+        role_id,
+      </if>
+      <if test="createAccId != null" >
+        create_acc_id,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="updateAccId != null" >
+        update_acc_id,
+      </if>
+      <if test="updateTime != null" >
+        update_time,
+      </if>
+      <if test="ts != null" >
+        ts,
+      </if>
+      <if test="isValid != null" >
+        is_valid,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=CHAR},
+      </if>
+      <if test="accId != null" >
+        #{accId,jdbcType=CHAR},
+      </if>
+      <if test="roleId != null" >
+        #{roleId,jdbcType=CHAR},
+      </if>
+      <if test="createAccId != null" >
+        #{createAccId,jdbcType=CHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=CHAR},
+      </if>
+      <if test="updateAccId != null" >
+        #{updateAccId,jdbcType=CHAR},
+      </if>
+      <if test="updateTime != null" >
+        #{updateTime,jdbcType=CHAR},
+      </if>
+      <if test="ts != null" >
+        #{ts,jdbcType=CHAR},
+      </if>
+      <if test="isValid != null" >
+        #{isValid,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  
+  
+  <delete id="delete" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_rel_acc_role
+		SET is_valid = 0
+		WHERE is_valid = 1
+			AND id in
+  			 <foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+                  #{item}
+             </foreach>
+	</delete>
+</mapper>

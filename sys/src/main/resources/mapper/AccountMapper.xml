@@ -1,0 +1,975 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.AccountMapper">
+	<resultMap id="accountResultMap" type="map">
+	</resultMap>
+	<sql id="accountColumns">
+		acc.id AS id,
+		acc.acc_num AS accNum,
+		acc.acc_name AS accName,
+		acc.acc_pwd AS
+		accPwd,
+		acc.salt AS salt,
+		acc.sex AS sex,
+		acc.acc_group_id
+		AS accGroupId,
+		acc.job_id AS jobId,
+		acc.area_id AS areaId,
+		acc.acc_photo
+		AS accPhoto,
+		acc.contact_add AS contactAdd,
+		acc.contact_mobile AS
+		contactMobile,
+		acc.contact_mail AS contactMail,
+		acc.login_ip AS loginIp,
+		acc.sort AS
+		sort,
+		acc.acc_type AS accType,
+		acc.online_time_last AS
+		onlineTimeLast,
+		acc.online_time_sum AS onlineTimeSum,
+		acc.login_time_last AS
+		loginTimeLast,
+		acc.is_online AS isOnline,
+		acc.is_admin AS isAdmin,
+		acc.is_locked AS isLocked,
+		acc.is_valid AS
+		isValid,
+		acc.extend1 AS
+		extend1,
+		acc.extend2 AS extend2,
+		acc.create_time
+		AS createTime,
+		acc.create_acc_id AS createAccId,
+		acc.update_time AS
+		updateTime,
+		acc.update_acc_id AS updateAccId,
+		acc.remark AS remark
+	</sql>
+
+	<!-- 通过获取系统注册信息 -->
+	<select id="getByCode" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM omp_sys_account acc
+		WHERE
+		is_valid = '1'
+		AND acc.acc_num = #{accNum}
+	</select>
+
+	<select id="findAccountByLoginName" parameterType="String"
+		resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM omp_sys_account acc
+		LEFT JOIN omp_rel_acc_role rel ON rel.acc_id = acc.id
+		LEFT JOIN omp_sys_role role ON role.id = rel.role_id
+		WHERE acc.is_valid = 1 and rel.is_valid=1
+		AND acc.acc_num =#{loginName}
+		AND role.role_type=#{userType}
+	</select>
+
+	<select id="findByNum" parameterType="String" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM omp_sys_account acc
+		WHERE
+		acc.is_valid=1 
+		and
+		acc.acc_num = #{accNum} 
+	</select>
+	<select id="findByEmail" parameterType="String" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM omp_sys_account acc
+		WHERE
+		acc.contact_mail = #{contactMail}
+	</select>
+
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<if test="!pagination">
+			<include refid="accountColumns"></include>
+			,oda.area_name_f AS areaName
+			,rel.*
+		</if>
+		<if test="pagination">
+			count(acc.id)
+		</if>
+		FROM
+			omp_sys_account acc
+		LEFT JOIN omp_dic_area oda ON acc.area_id = oda.id
+		LEFT JOIN (
+			SELECT
+				org.org_name_f AS orgName,
+				org.org_code AS orgCode,
+				orao.acc_id
+			FROM
+				omp_rel_acc_org orao
+			LEFT JOIN omp_sys_org org ON org.id = orao.org_id
+			WHERE
+				orao.is_valid = 1
+			AND org.is_valid = 1
+			GROUP BY orao.acc_id
+		) rel ON acc.id = rel.acc_id 
+		WHERE
+			acc.is_valid = 1
+		AND oda.is_valid = 1 
+		<if test="accName != null and accName != '' ">
+			AND ( acc.acc_name LIKE '%${accName}%' OR acc.acc_num LIKE
+			'%${accName}%')
+		</if>
+		<if test="isLocked != null and isLocked != '' ">
+			AND acc.is_locked = #{isLocked}
+		</if>
+		<if test="orgName != null and orgName != '' ">
+			AND orgName LIKE '%${orgName}%'
+		</if>
+		ORDER BY acc.is_online desc, acc.sort 
+	</select>
+	
+	<select id="selectByPageOrg" parameterType="map" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<if test="!pagination">
+			<include refid="accountColumns"></include>
+			,oda.area_name_f as areaName,org.org_name_f as orgName,org.org_code as orgCode
+		</if>
+		<if test="pagination">
+			 count(acc.id) 
+		</if>
+		FROM omp_sys_account acc
+		left join omp_dic_area oda on acc.area_id =
+		oda.id
+		LEFT JOIN omp_rel_acc_org rel on acc.id=rel.acc_id
+		LEFT JOIN
+		omp_sys_org org on org.id=rel.org_id
+		WHERE acc.is_valid = 1
+		
+		AND acc.id NOT IN  (SELECT acc_id FROM omp_rel_acc_org WHERE is_valid = 1 and org_id=#{orgId})
+		<!-- 组织机构添加成员账号类型查询 -->
+		<if test="accType != null and accType != '' ">
+			and acc.acc_type = #{accType}
+		</if>
+		<!-- 组织机构添加成员账号名称查询 -->
+		<if test="accountName != null and accountName != '' ">
+			and acc.acc_name like '%${accountName}%'
+		</if>
+		<!-- 组织机构添加成员登录账号查询 -->
+		<if test="accNum != null and accNum != '' ">
+			and acc.acc_num like '%${accNum}%'
+		</if>
+		<!-- GROUP BY acc.id -->
+		ORDER BY acc.sort ASC
+	</select>
+	
+	<select id="selectByPageOrgIn" parameterType="map" resultType="com.bonc.ioc.model.Account">
+        SELECT
+        <if test="!pagination">
+            <include refid="accountColumns"></include>
+            ,oda.area_name_f as areaName,org.org_name_f as orgName,org.org_code as orgCode
+        </if>
+        <if test="pagination">
+            count(acc.id)
+        </if>
+        FROM omp_rel_acc_org rel
+		LEFT JOIN omp_sys_account acc ON acc.id = rel.acc_id and acc.is_valid = 1
+		LEFT JOIN omp_dic_area oda ON acc.area_id = oda.id
+		LEFT JOIN omp_sys_org org ON org.id = rel.org_id and org.is_valid = 1
+		WHERE
+			rel.org_id = #{orgId}
+			and rel.is_valid = 1 
+			and acc.id is not null
+        <!-- 组织机构查看成员账号类型查询 -->
+        <if test="accType != null and accType != '' ">
+            and acc.acc_type = #{accType}
+        </if>
+        <!-- 组织机构查看成员账号名称查询 -->
+        <if test="accountName != null and accountName != '' ">
+            and acc.acc_name like '%${accName}%'
+        </if>
+        <!-- 组织机构查看成员登录账号查询 -->
+        <if test="accNum != null and accNum != '' ">
+            and acc.acc_num like '%${accNum}%'
+        </if>
+
+       <!--  GROUP BY acc.id -->
+        ORDER BY acc.sort ASC
+    </select>
+	
+	
+	<select id="findById" parameterType="map" resultType="com.bonc.ioc.model.Account">
+		SELECT DISTINCT
+			<include refid="accountColumns"></include>
+			,oda.area_name_f AS areaName
+			,rel.*
+		FROM
+			omp_sys_account acc
+		LEFT JOIN omp_dic_area oda ON acc.area_id = oda.id
+		LEFT JOIN (
+			SELECT
+				org.org_name_f AS orgName,
+				org.org_code AS orgCode,
+				orao.acc_id
+			FROM
+				omp_rel_acc_org orao
+			LEFT JOIN omp_sys_org org ON org.id = orao.org_id
+			WHERE
+				orao.is_valid = 1
+			AND org.is_valid = 1
+		) rel ON acc.id = rel.acc_id 
+		WHERE
+			acc.is_valid = 1
+		AND oda.is_valid = 1
+		AND acc.id = #{id}
+		group by acc.id
+	</select>
+
+
+	<!-- 删除 -->
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_account
+		SET is_valid = 0
+		WHERE is_valid = 1 
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+	<!-- 查询是否是管理员 -->
+	<select id="findByIsAdmin" parameterType="String" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM omp_sys_account acc
+		WHERE
+		acc.is_admin="1"
+		<if test="id != null and id != '' ">
+			AND acc.id = #{id}
+		</if>
+		
+	</select>
+
+	<!--增加导入用户密码 -->
+	<!--<update id="addImportPwd" flushCache="false" parameterType="java.util.HashMap">-->
+		<!--UPDATE omp_sys_account-->
+		<!--SET acc_pwd = #{pwd}-->
+		<!--WHERE is_valid = 1-->
+		<!--AND id in -->
+	 	<!--<foreach item="item" index="index" collection="ids" open="("-->
+			<!--separator="," close=")">-->
+			<!--#{item}-->
+		<!--</foreach> -->
+
+	<!--</update>-->
+
+	<!-- 新增 -->
+	<insert id="save" parameterType="com.bonc.ioc.model.Account">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+			select replace(uuid(),'-','') from dual
+		</selectKey>
+		insert into omp_sys_account
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="accNum != null">
+				acc_num,
+			</if>
+			<if test="accName != null">
+				acc_name,
+			</if>
+			<if test="accPwd != null">
+				acc_pwd,
+			</if>
+			<if test="salt != null">
+				salt,
+			</if>
+			<if test="sex != null">
+				sex,
+			</if>
+			<if test="accGroupId != null">
+				acc_group_id,
+			</if>
+			<if test="jobId != null">
+				job_id,
+			</if>
+			<if test="areaId != null">
+				area_id,
+			</if>
+			<if test="accPhoto != null">
+				acc_photo,
+			</if>
+			<if test="contactAdd != null">
+				contact_add,
+			</if>
+			<if test="contactMobile != null">
+				contact_mobile,
+			</if>
+			<if test="contactMail != null">
+				contact_mail,
+			</if>
+			<if test="loginIp != null">
+				login_ip,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="accType != null">
+				acc_type,
+			</if>
+			<if test="onlineTimeLast != null">
+				online_time_last,
+			</if>
+			<if test="onlineTimeSum != null">
+				online_time_sum,
+			</if>
+			<if test="loginTimeLast != null">
+				login_time_last,
+			</if>
+			<if test="isOnline != null">
+				is_online,
+			</if>
+			<if test="isAdmin != null">
+				is_admin,
+			</if>
+			<if test="isLocked != null">
+				is_locked,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=CHAR},
+			</if>
+			<if test="accNum != null">
+				#{accNum,jdbcType=VARCHAR},
+			</if>
+			<if test="accName != null">
+				#{accName,jdbcType=VARCHAR},
+			</if>
+			<if test="accPwd != null">
+				#{accPwd,jdbcType=VARCHAR},
+			</if>
+			<if test="salt != null">
+				#{salt,jdbcType=VARCHAR},
+			</if>
+			<if test="sex != null">
+				#{sex,jdbcType=CHAR},
+			</if>
+			<if test="accGroupId != null">
+				#{accGroupId,jdbcType=CHAR},
+			</if>
+			<if test="jobId != null">
+				#{jobId,jdbcType=CHAR},
+			</if>
+			<if test="areaId != null">
+				#{areaId,jdbcType=CHAR},
+			</if>
+			<if test="accPhoto != null">
+				#{accPhoto,jdbcType=VARCHAR},
+			</if>
+			<if test="contactAdd != null">
+				#{contactAdd,jdbcType=VARCHAR},
+			</if>
+			<if test="contactMobile != null">
+				#{contactMobile,jdbcType=VARCHAR},
+			</if>
+			<if test="contactMail != null">
+				#{contactMail,jdbcType=VARCHAR},
+			</if>
+			<if test="loginIp != null">
+				#{loginIp,jdbcType=VARCHAR},
+			</if>
+			<if test="sort != null">
+				#{sort,jdbcType=INTEGER},
+			</if>
+			<if test="accType != null">
+				#{accType,jdbcType=INTEGER},
+			</if>
+			<if test="onlineTimeLast != null">
+				#{onlineTimeLast,jdbcType=VARCHAR},
+			</if>
+			<if test="onlineTimeSum != null">
+				#{onlineTimeSum,jdbcType=VARCHAR},
+			</if>
+			<if test="loginTimeLast != null">
+				#{loginTimeLast,jdbcType=TIMESTAMP},
+			</if>
+			<if test="isOnline != null">
+				#{isOnline,jdbcType=INTEGER},
+			</if>
+			<if test="isAdmin != null">
+				#{isAdmin,jdbcType=CHAR},
+			</if>
+			<if test="isLocked != null">
+				#{isLocked,jdbcType=INTEGER},
+			</if>
+			<if test="isValid != null">
+				#{isValid,jdbcType=INTEGER},
+			</if>
+			<if test="extend1 != null">
+				#{extend1,jdbcType=VARCHAR},
+			</if>
+			<if test="extend2 != null">
+				#{extend2,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				#{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="remark != null">
+				#{remark,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.model.Account">
+		update omp_sys_account
+		<set>
+			<if test="accNum != null">
+				acc_num = #{accNum,jdbcType=VARCHAR},
+			</if>
+			<if test="accName != null">
+				acc_name = #{accName,jdbcType=VARCHAR},
+			</if>
+			<if test="accPwd != null">
+				acc_pwd = #{accPwd,jdbcType=VARCHAR},
+			</if>
+			<if test="salt != null">
+				salt = #{salt,jdbcType=VARCHAR},
+			</if>
+			<if test="sex != null">
+				sex = #{sex,jdbcType=CHAR},
+			</if>
+			<if test="accGroupId != null">
+				acc_group_id = #{accGroupId,jdbcType=CHAR},
+			</if>
+			<if test="jobId != null">
+				job_id = #{jobId,jdbcType=CHAR},
+			</if>
+			<if test="areaId != null">
+				area_id = #{areaId,jdbcType=CHAR},
+			</if>
+			<if test="accPhoto != null">
+				acc_photo = #{accPhoto,jdbcType=VARCHAR},
+			</if>
+			<if test="contactAdd != null">
+				contact_add = #{contactAdd,jdbcType=VARCHAR},
+			</if>
+			<if test="contactMobile != null">
+				contact_mobile = #{contactMobile,jdbcType=VARCHAR},
+			</if>
+			<if test="contactMail != null">
+				contact_mail = #{contactMail,jdbcType=VARCHAR},
+			</if>
+			<if test="loginIp != null">
+				login_ip = #{loginIp,jdbcType=VARCHAR},
+			</if>
+			<if test="sort != null">
+				sort = #{sort,jdbcType=INTEGER},
+			</if>
+			<if test="accType != null">
+				acc_type = #{accType,jdbcType=INTEGER},
+			</if>
+			<if test="onlineTimeLast != null">
+				online_time_last = #{onlineTimeLast,jdbcType=VARCHAR},
+			</if>
+			<if test="onlineTimeSum != null">
+				online_time_sum = #{onlineTimeSum,jdbcType=VARCHAR},
+			</if>
+			<if test="loginTimeLast != null">
+				login_time_last = #{loginTimeLast,jdbcType=TIMESTAMP},
+			</if>
+			<if test="isOnline != null">
+				is_online = #{isOnline,jdbcType=INTEGER},
+			</if>
+			<if test="isAdmin != null">
+				is_admin = #{isAdmin,jdbcType=CHAR},
+			</if>
+			<if test="isLocked != null">
+				is_locked = #{isLocked,jdbcType=INTEGER},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid,jdbcType=INTEGER},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1,jdbcType=VARCHAR},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId,jdbcType=VARCHAR},
+			</if>
+			<if test="remark != null">
+				remark = #{remark,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=CHAR}
+	</update>
+	<update id="addSort" parameterType="Integer" flushCache="false">
+		UPDATE
+		omp_sys_account
+		set sort = sort+1
+		WHERE
+		sort>#{addSort}
+		AND
+		is_valid = 1
+	</update>
+	<!--<update id="updateSort" parameterType="pd" flushCache="false">-->
+		<!--UPDATE omp_sys_account-->
+		<!--<if test="operate !=null and operate=='before'">-->
+			<!--SET sort = sort + 1-->
+		<!--</if>-->
+		<!--<if test="operate !=null and operate=='after'">-->
+			<!--SET sort = sort - 1-->
+		<!--</if>-->
+		<!--WHERE-->
+		<!--sort > #{begin}-->
+		<!--AND sort &lt; #{end}-->
+		<!--AND is_valid = 0-->
+	<!--</update>-->
+
+
+
+	<!-- 查询用户所属机构 -->
+	<select id="findOrgnameByAccID" parameterType="String"
+		resultType="String">
+		SELECT
+		org.org_name_f as orgName
+		from
+		omp_rel_acc_org rel
+		LEFT
+		JOIN
+		omp_sys_org org
+		on
+		org.id=rel.org_id where rel.acc_id=#{accId} and
+		rel.is_valid='1'
+	</select>
+	<!-- 查询用户所属机构 -->
+    <select id="getorgByAccID" parameterType="String" resultType="com.bonc.ioc.model.SysOrg">
+        SELECT
+        org.id AS id,
+        org.org_pcode AS orgPcode,
+        org.org_code AS orgCode,
+        org.org_name_f AS orgNameF,
+        org.org_name_s AS orgNameS,
+        org.org_type AS orgType,
+        org.org_level AS orgLevel,
+        org.is_last AS isLast,
+        org.sort AS sort,
+        org.is_valid AS isValid,
+        org.extend1 AS extend1,
+        org.extend2 AS extend2,
+        org.create_time AS createTime,
+        org.create_acc_id AS createAccId,
+        org.update_time AS updateTime,
+        org.update_acc_id AS updateAccId,
+        org.remark AS remark
+        from
+        omp_rel_acc_org rel
+        LEFT JOIN
+        omp_sys_org org
+        on org.id=rel.org_id 
+        where rel.acc_id=#{accId} 
+        and rel.is_valid='1'
+    </select>
+	<!-- 查询用户角色 -->
+	<select id="findRolenameByAccID" parameterType="String"
+		resultType="String">
+		SELECT
+		role.role_name as roleName
+		from
+		omp_rel_acc_role rel
+		LEFT JOIN
+		omp_sys_role role
+		on
+		role.id=rel.role_id where
+		rel.acc_id=#{accId} and rel.is_valid='1'
+	</select>
+	<update id="updateAccount" parameterType="com.bonc.ioc.model.Account" flushCache="false">
+		update omp_sys_account
+		<set>
+			<if test="accNum != null">
+				acc_num = #{accNum},
+			</if>
+			<if test="accName != null">
+				acc_name = #{accName},
+			</if>
+			<if test="accPwd != null">
+				acc_pwd = #{accPwd},
+			</if>
+			<if test="salt != null">
+				salt = #{salt},
+			</if>
+			<if test="sex != null">
+				sex = #{sex},
+			</if>
+			<if test="accGroupId != null">
+				acc_group_id = #{accGroupId},
+			</if>
+			<if test="jobId != null">
+				job_id = #{jobId},
+			</if>
+			<if test="areaId != null">
+				area_id = #{areaId},
+			</if>
+			<if test="accPhoto != null">
+				acc_photo = #{accPhoto},
+			</if>
+			<if test="contactAdd != null">
+				contact_add = #{contactAdd},
+			</if>
+			<if test="contactMobile != null">
+				contact_mobile = #{contactMobile},
+			</if>
+			<if test="contactMail != null">
+				contact_mail = #{contactMail},
+			</if>
+			<if test="loginIp != null">
+				login_ip = #{loginIp},
+			</if>
+			<if test="sort != null">
+				sort = #{sort},
+			</if>
+			<if test="accType != null">
+				acc_type = #{accType},
+			</if>
+			<if test="onlineTimeLast != null">
+				online_time_last = #{onlineTimeLast},
+			</if>
+			<if test="onlineTimeSum != null">
+				online_time_sum = #{onlineTimeSum},
+			</if>
+			<if test="loginTimeLast != null">
+				login_time_last = #{loginTimeLast},
+			</if>
+			<if test="isOnline != null">
+				is_online = #{isOnline},
+			</if>
+			<if test="isAdmin != null">
+				is_admin = #{isAdmin},
+			</if>
+			<if test="isLocked != null">
+				is_locked = #{isLocked},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="remark != null">
+				remark = #{remark},
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+
+
+	<!--<select id="findForList" parameterType="pd" resultType="pd">-->
+		<!--SELECT-->
+		<!--acc.id AS id,-->
+		<!--acc.acc_num AS accNum,-->
+		<!--acc.acc_name AS accName,-->
+		<!--acc.acc_pwd AS accPwd,-->
+		<!--acc.salt AS salt,-->
+		<!--acc.sex AS sex,-->
+		<!--acc.acc_group_id AS accGroupId,-->
+		<!--acc.job_id AS jobId,-->
+		<!--acc.area_id AS-->
+		<!--areaId,-->
+		<!--acc.acc_photo AS accPhoto,-->
+		<!--acc.contact_add AS contactAdd,-->
+		<!--acc.contact_mobile AS contactMobile,-->
+		<!--acc.contact_mail AS contactMail,-->
+		<!--acc.login_ip AS loginIp,-->
+		<!--acc.sort AS sort,-->
+		<!--acc.acc_type AS accType,-->
+		<!--acc.online_time_last AS onlineTimeLast,-->
+		<!--acc.online_time_sum AS-->
+		<!--onlineTimeSum,-->
+		<!--acc.login_time_last AS loginTimeLast,-->
+		<!--acc.is_online AS-->
+		<!--isOnline,-->
+		<!--acc.is_admin AS isAdmin,-->
+		<!--acc.is_locked AS isLocked,-->
+		<!--acc.is_valid AS isValid,-->
+		<!--acc.extend1 AS extend1,-->
+		<!--acc.extend2 AS extend2,-->
+		<!--acc.create_time AS createTime,-->
+		<!--acc.create_acc_id AS createAccId,-->
+		<!--acc.update_time AS updateTime,-->
+		<!--acc.update_acc_id AS updateAccId,-->
+		<!--acc.remark AS remark-->
+		<!--from omp_sys_account acc-->
+		<!--left join omp_dic_element-->
+		<!--e on e.id=acc.acc_type-->
+		<!--where acc.is_valid=1-->
+		<!--<if test="accType != null and accType != '' ">-->
+			<!--and acc.acc_type = #{pd.accType}-->
+		<!--</if>-->
+	<!--</select>-->
+
+	<insert id="saveAccOrg" parameterType="com.bonc.ioc.model.RelAccOrg">
+		<selectKey keyProperty="id" resultType="String" order="BEFORE">
+			select replace(uuid(),'-','') from dual
+		</selectKey>
+		insert into omp_rel_acc_org
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="accId != null">
+				acc_id,
+			</if>
+			<if test="orgId != null">
+				org_id,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="ts != null">
+				ts,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=CHAR},
+			</if>
+			<if test="accId != null">
+				#{accId,jdbcType=CHAR},
+			</if>
+			<if test="orgId != null">
+				#{orgId,jdbcType=CHAR},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId,jdbcType=CHAR},
+			</if>
+			<if test="createTime != null">
+				#{createTime,jdbcType=CHAR},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId,jdbcType=CHAR},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime,jdbcType=CHAR},
+			</if>
+			<if test="ts != null">
+				#{ts,jdbcType=CHAR},
+			</if>
+			<if test="isValid != null">
+				#{isValid,jdbcType=INTEGER},
+			</if>
+		</trim>
+	</insert>
+	<select id="findAccOrgById" parameterType="String"
+		resultType="com.bonc.ioc.model.RelAccOrg">
+		SELECT
+		id AS id,
+		acc_id AS accId,
+		org_id AS orgId,
+		create_acc_id AS createAccId,
+		create_time AS createTime,
+		update_acc_id AS updateAccId,
+		update_time AS updateTime,
+		ts AS ts,
+		is_valid AS isValid
+		FROM omp_rel_acc_org
+		WHERE is_valid = 1
+		AND acc_id = #{accId}
+	</select>
+	<update id="updateAccOrg" parameterType="com.bonc.ioc.model.RelAccOrg"
+		flushCache="false">
+		update omp_rel_acc_org
+		<set>
+			<if test="id != null">
+				id = #{id},
+			</if>
+			<if test="accId != null">
+				acc_id = #{accId},
+			</if>
+			<if test="orgId != null">
+				org_id = #{orgId},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="ts != null">
+				ts = #{ts},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+		</set>
+		where acc_id=#{accId}
+	</update>
+
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT
+		IFNULL(MAX(sort+1),1) as sort FROM omp_sys_account where is_valid = 1
+	</select>
+	<update id="updateOtherEleSort" flushCache="false">
+		UPDATE
+		omp_sys_account
+		set sort = sort+1
+		WHERE
+		sort>(#{sort}-1)
+		AND
+		is_valid = 1
+	</update>
+
+	<update id="updateAdmin" flushCache="false">
+		UPDATE omp_sys_account
+		set
+		is_admin = '1'
+		WHERE
+		id=#{accId}
+	</update>
+
+	<update id="updateRemoveAdmin" flushCache="false">
+		UPDATE omp_sys_account
+		set is_admin = '0'
+		WHERE
+		id=#{accId}
+	</update>
+
+
+	<update id="removeAdmin" flushCache="false">
+		UPDATE omp_sys_account
+		SET is_admin = '0'
+		WHERE id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</update>
+	
+	
+	<update id="updateAccountPwd" flushCache="false">
+		UPDATE omp_sys_account
+		SET acc_pwd = #{pwd}
+		WHERE is_valid = 1
+		AND id = #{id}
+	</update>
+	
+    <!-- 查询最大排序号 -->
+    <select id="getMaxSort" resultType="java.lang.Integer" >
+        select max(sort) from omp_sys_account
+    </select>
+	
+	<select id="getUserById" parameterType="string" resultType="com.bonc.ioc.model.Account">
+		SELECT
+		<include refid="accountColumns"></include>
+		FROM
+			omp_sys_account acc
+		WHERE
+			acc.id = #{userId}
+		AND acc.is_valid = 1
+	</select>
+	
+	<update id="updatePwd" parameterType="string">
+		UPDATE omp_sys_account
+		SET acc_pwd = #{password},
+		 salt = #{salt}
+		WHERE
+			is_valid = 1
+		AND id = #{userId}
+	</update>
+  
+  <update id="locked"  parameterType="string">
+    UPDATE omp_sys_account
+    SET is_locked = 1
+    WHERE
+      is_valid = 1
+		AND id = #{userId}
+  </update>
+  
+  <update id="unlocked" parameterType="string">
+    UPDATE omp_sys_account
+    SET is_locked = 0
+    WHERE
+      is_valid = 1
+		AND id = #{userId}
+  </update>
+    
+</mapper>

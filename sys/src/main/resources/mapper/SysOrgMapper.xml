@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.SysOrgMapper">
+	<resultMap id="BaseResultMap" type="map">
+	</resultMap>
+	<sql id="sysOrgColumns">
+		org.id AS id,
+		org.org_pcode AS orgPcode,
+		org.org_code AS orgCode,
+		org.org_name_f AS orgNameF,
+		org.org_name_s AS orgNameS,
+		org.org_type AS orgType,
+		org.org_level AS orgLevel,
+		org.is_last AS isLast,
+		org.sort AS sort,
+		org.is_valid AS isValid,
+		org.extend1 AS extend1,
+		org.extend2 AS extend2,
+		org.create_time AS createTime,
+		org.create_acc_id AS createAccId,
+		org.update_time AS updateTime,
+		org.update_acc_id AS updateAccId,
+		org.remark AS remark
+	</sql>
+
+
+	<select id="findMaxOrderNum" resultType="java.lang.Integer">
+		SELECT IFNULL(MAX(sort+1),1) as sort FROM omp_sys_org where is_valid = 1
+	</select>
+
+	<select id="selectByPage" parameterType="map" resultType="com.bonc.ioc.model.SysOrg">
+		SELECT
+		<if test="!pagination">
+			<include refid="sysOrgColumns"></include>,odc.elem_name orgTypeName
+		</if>
+		<if test="pagination">
+			count(org.id)
+		</if>
+		
+		FROM omp_sys_org org left join omp_dic_element odc on odc.id = org.org_type
+		WHERE org.is_valid = 1
+		
+		<if test="orgCode != null and orgCode != '' ">
+			and org.org_code = #{orgCode}
+		</if>
+		<if test="orgType != null and orgType != '' ">
+			and org.org_type = #{orgType}
+		</if>
+		<if test="orgName != null and orgName != '' ">
+			and org.org_name_f like '%${orgName}%'
+		</if>
+	</select>
+
+
+
+	<!-- 组织机构列表 -->
+	<select id="getSysOrgList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysOrg">
+		SELECT
+		org.id AS id,
+		org.org_pcode orgPcode,
+		org.org_code orgCode,
+		org.org_name_f
+		orgNameF,
+		org.org_name_s orgNameS,
+		org.org_type orgType,
+		org.org_level
+		orgLevel,
+		org.is_last isLast,
+		org.sort sort,
+		org.is_valid isValid,
+		org.extend1 extend1,
+		org.extend2 extend2,
+		org.create_time createTime,
+		org.create_acc_id createAccId,
+		org.update_time updateTime,
+		org.update_acc_id updateAccId,
+		org.remark remark
+		FROM omp_sys_org org
+		WHERE org.is_valid= 1
+		ORDER BY
+		org.sort
+		<!-- <if test="orgCode != null and orgCode != '' ">
+		and org.org_code = #{orgCode}
+	</if> -->
+	</select>
+<!-- 根据组织机构类查列表 -->
+	<select id="getSysOrgListByOrgType" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysOrg">
+		SELECT
+		org.id AS id,
+		org.org_pcode orgPcode,
+		org.org_code orgCode,
+		org.org_name_f
+		orgNameF,
+		org.org_name_s orgNameS,
+		org.org_type orgType,
+		org.org_level
+		orgLevel,
+		org.is_last isLast,
+		org.sort sort,
+		org.is_valid isValid,
+		org.extend1 extend1,
+		org.extend2 extend2,
+		org.create_time createTime,
+		org.create_acc_id createAccId,
+		org.update_time updateTime,
+		org.update_acc_id updateAccId,
+		org.remark remark
+		FROM omp_sys_org org
+		WHERE org.is_valid= 1
+		<if test="orgType != null and orgType != '' ">
+			and org.org_type = #{orgType}
+		</if>
+		ORDER BY
+		org.sort
+	</select>
+
+	<!-- 通过id获取数据 -->
+	<select id="findById" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysOrg">
+		SELECT
+		org.id AS id,
+		org.org_pcode orgPcode,
+		org.org_code orgCode,
+		org.org_name_f orgNameF,
+		org.org_name_s orgNameS,
+		org.org_type orgType,
+		org.org_level orgLevel,
+		org.is_last isLast,
+		org.sort sort,
+		org.is_valid
+		isValid,
+		org.extend1 extend1,
+		org.extend2 extend2,
+		org.create_time
+		createTime,
+		org.create_acc_id createAccId,
+		org.update_time updateTime,
+		org.update_acc_id updateAccId,
+		org.remark remark,
+		SO.org_name_f pOrgName,
+		odc.elem_name orgTypeName
+		FROM omp_sys_org org LEFT JOIN (SELECT org_code,org_name_f FROM omp_sys_org) AS SO ON org.org_pcode = SO.org_code
+		LEFT JOIN omp_dic_element odc on odc.id = org.org_type
+		WHERE
+		org.is_valid = '1'
+		<if test="id !=null and id != '' ">
+			AND org.id = #{id}
+		</if>
+	</select>
+
+	<!-- 通过机构编码获取组织机构信息 -->
+	<select id="findByCode" parameterType="java.lang.String"
+		resultType="com.bonc.ioc.model.SysOrg">
+		SELECT
+		<include refid="sysOrgColumns"></include>
+		FROM omp_sys_org org
+		WHERE
+		org.org_code = #{orgCode}
+	</select>
+
+	<update id="updateOtherOrgSort" flushCache="false">
+			UPDATE omp_sys_org
+			set sort = sort+1
+			WHERE
+			sort>(#{sort}-1)
+			AND 
+			is_valid = 1 and org_pcode = #{orgPcode}
+	</update>
+
+	<!-- 查询最大的菜单code -->
+	<select id="findMaxOrgCode" resultType="java.lang.String">
+		SELECT IFNULL(MAX(SUBSTR(org_code, 6)),'0000') AS CODE FROM omp_sys_org where is_valid = 1 AND org_code LIKE 'O%'
+	</select>
+
+	<!-- 保存 -->
+	<insert id="save" parameterType="com.bonc.ioc.model.SysOrg" flushCache="false">
+	<selectKey keyProperty="id" resultType="String" order="BEFORE">
+            select replace(uuid(),'-','') from dual 		
+    </selectKey>
+		INSERT INTO omp_sys_org
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="orgPcode != null">
+				org_pcode,
+			</if>
+			<if test="orgCode != null">
+				org_code,
+			</if>
+			<if test="orgNameF != null">
+				org_name_f,
+			</if>
+			<if test="orgNameS != null">
+				org_name_s,
+			</if>
+			<if test="orgType != null">
+				org_type,
+			</if>
+			<if test="orgLevel != null">
+				org_level,
+			</if>
+			<if test="isLast != null">
+				is_last,
+			</if>
+			<if test="sort != null">
+				sort,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="remark != null">
+				remark,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="orgPcode != null">
+				#{orgPcode},
+			</if>
+			<if test="orgCode != null">
+				#{orgCode},
+			</if>
+			<if test="orgNameF != null">
+				#{orgNameF},
+			</if>
+			<if test="orgNameS != null">
+				#{orgNameS},
+			</if>
+			<if test="orgType != null">
+				#{orgType},
+			</if>
+			<if test="orgLevel != null">
+				#{orgLevel},
+			</if>
+			<if test="isLast != null">
+				#{isLast},
+			</if>
+			<if test="sort != null">
+				#{sort},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="extend1 != null">
+				#{extend1},
+			</if>
+			<if test="extend2 != null">
+				#{extend2},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="remark != null">
+				#{remark},
+			</if>
+		</trim>
+	</insert>
+
+	<!-- 修改 -->
+	<update id="update" parameterType="com.bonc.ioc.model.SysOrg" flushCache="false">
+		UPDATE omp_sys_org
+		<set>
+			<if test="id != null">
+				id = #{id,jdbcType=VARCHAR},
+			</if>
+			<if test="orgPcode != null">
+				org_pcode = #{orgPcode},
+			</if>
+			<if test="orgCode != null">
+				org_code = #{orgCode},
+			</if>
+			<if test="orgNameF != null">
+				org_name_f = #{orgNameF},
+			</if>
+			<if test="orgNameS != null">
+				org_name_s = #{orgNameS},
+			</if>
+			<if test="orgType != null">
+				org_type = #{orgType},
+			</if>
+			<if test="orgLevel != null">
+				org_level = #{orgLevel},
+			</if>
+			<if test="isLast != null">
+				is_last = #{isLast},
+			</if>
+			<if test="sort != null">
+				sort = #{sort},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime},
+			</if>
+			<if test="createAccId != null">
+				create_acc_id = #{createAccId},
+			</if>
+			<if test="updateTime != null">
+				update_time = #{updateTime},
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id = #{updateAccId},
+			</if>
+			<if test="remark != null">
+				remark = #{remark},
+			</if>
+
+		</set>
+		WHERE id = #{id,jdbcType=VARCHAR}
+	</update>
+
+	<select id="findSysOrgByorgCodeAndSort" resultType="com.bonc.ioc.model.SysOrg">
+		SELECT 
+			<include refid="sysOrgColumns"></include>
+		FROM omp_sys_org org
+		WHERE org.org_pcode = #{orgPcode} and org.sort = #{sort} and org.is_valid = 1
+	</select>
+
+	<select id="checkCanDel" parameterType="java.lang.String" resultType="com.bonc.ioc.model.SysOrg">
+	SELECT
+		<include refid="sysOrgColumns"></include>
+	FROM omp_sys_org org
+	WHERE org.is_valid = 1 and org.org_pcode in(
+	SELECT
+		org_code as orgCode
+	FROM omp_sys_org
+	WHERE id in
+		<foreach item="item" index="index" collection="array" open="("
+				separator="," close=")">
+				#{item}
+		</foreach>
+	)
+	</select>
+
+	<!-- 删除 -->
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+		UPDATE omp_sys_org
+		SET is_valid = 0
+		WHERE is_valid = 1
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+	<!--<update id="addSort" parameterType="Integer" flushCache="false">-->
+		<!--UPDATE-->
+		<!--omp_sys_org-->
+		<!--set sort = sort+1-->
+		<!--WHERE-->
+		<!--sort>#{addSort}-->
+		<!--AND-->
+		<!--is_valid = 1-->
+	<!--</update>-->
+
+	<!--<update id="updateSort" parameterType="pd" flushCache="false">-->
+		<!--UPDATE omp_sys_org-->
+		<!--<if test="operate !=null and operate=='before'">-->
+			<!--SET sort = sort + 1-->
+		<!--</if>-->
+		<!--<if test="operate !=null and operate=='after'">-->
+			<!--SET sort = sort - 1-->
+		<!--</if>-->
+		<!--WHERE-->
+		<!--sort > #{begin}-->
+		<!--AND sort &lt; #{end}-->
+		<!--AND is_valid = 1-->
+	<!--</update>-->
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.OmpDicElementMapper">
+
+
+    <select id="getDicByType" resultType="java.util.Map" parameterType="java.lang.String">
+      select
+              id AS id,
+              type_code AS typeCode,
+              elem_code AS elemCode,
+              elem_name AS elemName,
+              elem_desc AS elemDesc,
+              sort AS sort,
+              is_valid AS isValid,
+              extend1 AS extend1,
+              extend2 AS extend2,
+              DATE_FORMAT(create_time,'%Y-%m-%d') AS createTime,
+              create_acc_id AS createAccId,
+              DATE_FORMAT(update_time,'%Y-%m-%d') AS updateTime,
+              update_acc_id AS updateAccId,
+              remark AS remark
+      from omp_dic_element
+      where
+              type_code = #{typeCode}
+    </select>
+
+
+</mapper>
+
+

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.bonc.ioc.dao.RelRoleMenuMapper" >
+    <sql id="relRoleMenuColumns">
+    	orrm.id AS id,
+		orrm.menu_id AS menuId,
+		orrm.role_id AS roleId,
+		orrm.is_valid AS isValid,
+		orrm.create_acc_id AS createAccId,
+		orrm.create_time AS createTime,
+		orrm.update_acc_id AS updateAccId,
+		orrm.update_time AS updateTime
+	</sql>
+	
+	<select id="getRelRoleMenuList" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelRoleMenu">
+	   select 
+	    <include refid="relRoleMenuColumns" />
+	    from omp_rel_role_menu orrm 
+	    where orrm.is_valid=1 
+	    <if test="roleId != null and roleId != '' ">
+			and orrm.role_id = #{roleId}
+		</if>
+    </select>
+    <select id="getRelRoleMenuListBymenu" parameterType="java.lang.String" resultType="com.bonc.ioc.model.RelRoleMenu">
+       select 
+        <include refid="relRoleMenuColumns" />
+        from omp_rel_role_menu orrm 
+        where orrm.is_valid=1 
+         <if test="menuId != null and menuId != '' ">
+            and orrm.menu_id = #{menuId}
+         </if>
+    </select>
+	<insert id="saveRelRoleMenu" parameterType="com.bonc.ioc.model.RelRoleMenu" flushCache="false">
+		INSERT INTO omp_rel_role_menu
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="menuId != null">
+				menu_id,
+			</if>
+			<if test="roleId != null">
+				role_id,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="createAccId != null">
+				create_acc_id,
+			</if>
+			<if test="createTime != null">
+				create_time,
+			</if>
+			<if test="updateAccId != null">
+				update_acc_id,
+			</if>
+			<if test="updateTime != null">
+				update_time,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="menuId != null">
+				#{menuId},
+			</if>
+			<if test="roleId != null">
+				#{roleId},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="createAccId != null">
+				#{createAccId},
+			</if>
+			<if test="createTime != null">
+				#{createTime},
+			</if>
+			<if test="updateAccId != null">
+				#{updateAccId},
+			</if>
+			<if test="updateTime != null">
+				#{updateTime},
+			</if>
+		</trim>
+	</insert>
+	<delete id="delete" parameterType="java.lang.String" flushCache="false">
+        UPDATE omp_rel_role_menu
+        SET is_valid = '0'
+		WHERE is_valid = '1'
+		AND id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+  	</delete>
+</mapper>

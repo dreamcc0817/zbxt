@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bonc.ioc.dao.DeptContactsMapper">
+	<sql id="commonColumns">
+		zd.id AS id,
+		zd.dept_name AS deptName,
+		zd.dept_code AS deptCode,
+		zd.dept_phone AS deptPhone,
+		zd.is_abeld_coment AS isAbeldComent,
+		zd.parent_id AS parentId,
+		zd.create_date AS createDate,
+		zd.create_by AS createBy,
+		zd.update_by AS updateBy,
+		zd.update_date AS updateDate,
+		zd.dep_id AS depId,
+		zd.is_valid AS isValid,
+		zd.extend1 AS extend1,
+		zd.extend2 AS extend2
+	</sql>
+	
+	<!-- 新增机构通讯录 -->
+	<insert id="add" parameterType="com.bonc.ioc.model.DeptContacts">
+		insert into zhlq_dept
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="deptName != null">
+				dept_name,
+			</if>
+			<if test="deptCode != null">
+				dept_code,
+			</if>
+			<if test="deptPhone != null">
+				dept_phone,
+			</if>
+			<if test="isAbeldComent != null">
+				is_abeld_coment,
+			</if>
+			<if test="parentId != null">
+				parent_id,
+			</if>
+			<if test="createDate != null">
+				create_date,
+			</if>
+			<if test="createBy != null">
+				create_by,
+			</if>
+			<if test="updateBy != null">
+				update_by,
+			</if>
+			<if test="updateDate != null">
+				update_date,
+			</if>
+			<if test="depId != null">
+				dep_id,
+			</if>
+			<if test="isValid != null">
+				is_valid,
+			</if>
+			<if test="extend1 != null">
+				extend1,
+			</if>
+			<if test="extend2 != null">
+				extend2,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id},
+			</if>
+			<if test="deptName != null">
+				#{deptName},
+			</if>
+			<if test="deptCode != null">
+				#{deptCode},
+			</if>
+			<if test="deptPhone != null">
+				#{deptPhone},
+			</if>
+			<if test="isAbeldComent != null">
+				#{isAbeldComent},
+			</if>
+			<if test="parentId != null">
+				#{parentId},
+			</if>
+			<if test="createDate != null">
+				#{createDate},
+			</if>
+			<if test="createBy != null">
+				#{createBy},
+			</if>
+			<if test="updateBy != null">
+				#{updateBy},
+			</if>
+			<if test="updateDate != null">
+				#{updateDate},
+			</if>
+			<if test="depId != null">
+				#{depId},
+			</if>
+			<if test="isValid != null">
+				#{isValid},
+			</if>
+			<if test="extend1 != null">
+				#{extend1},
+			</if>
+			<if test="extend2 != null">
+				#{extend2},
+			</if>
+		</trim>
+	</insert>
+	
+	<!-- 修改机构通讯录 -->
+	<update id="edit" parameterType="com.bonc.ioc.model.DeptContacts">
+		UPDATE zhlq_dept
+		<trim prefix="set" suffixOverrides=",">
+			<if test="deptName != null">
+				dept_name = #{deptName},
+			</if>
+			<if test="deptCode != null">
+				dept_code = #{deptCode},
+			</if>
+			<if test="deptPhone != null">
+				dept_phone = #{deptPhone},
+			</if>
+			<if test="isAbeldComent != null">
+				is_abeld_coment = #{isAbeldComent},
+			</if>
+			<if test="parentId != null">
+				parent_id = #{parentId},
+			</if>
+			<if test="createDate != null">
+				create_date = #{createDate},
+			</if>
+			<if test="createBy != null">
+				create_by = #{createBy},
+			</if>
+			<if test="updateBy != null">
+				update_by = #{updateBy},
+			</if>
+			<if test="updateDate != null">
+				update_date = #{updateDate},
+			</if>
+			<if test="depId != null">
+				dep_id = #{depId},
+			</if>
+			<if test="isValid != null">
+				is_valid = #{isValid},
+			</if>
+			<if test="extend1 != null">
+				extend1 = #{extend1},
+			</if>
+			<if test="extend2 != null">
+				extend2 = #{extend2},
+			</if>
+		</trim>
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 删除机构通讯录 -->
+	<update id="del" parameterType="String">
+		UPDATE
+		zhlq_dept
+		set is_valid = '0'
+		where id = #{id}
+	</update>
+	
+	<!-- 组织列表的生成 -->
+	<select id="getORG" parameterType="string" resultType="com.bonc.ioc.model.DeptContacts">
+		SELECT
+		<include refid="commonColumns"></include>
+		FROM zhlq_dept zd
+		WHERE zd.is_valid = '1' AND zd.parent_id IS NULL
+		<if test="keyword != null and keyword != ''">
+			AND zd.dept_name LIKE CONCAT('%',#{keyword},'%')
+		</if>
+	</select>
+	
+	<!-- 组织通讯录(管理者)——分页查询部门通讯录 -->
+	<select id="selectByPageDEPT" parameterType="map" resultType="com.bonc.ioc.model.DeptContacts">
+		SELECT
+		<if test="!pagination">
+			<include refid="commonColumns"/>
+		</if>
+		<if test="pagination">
+			count(zd.id)
+		</if>
+		FROM zhlq_dept zd
+		WHERE zd.is_valid = '1'
+		<if test="keyword != null and keyword != ''">
+			AND zd.dept_name LIKE CONCAT('%',#{keyword},'%')
+		</if>
+		<if test="deptId != null and deptId != ''">
+			AND zd.parent_id = #{deptId}
+		</if>
+	</select>
+</mapper>
